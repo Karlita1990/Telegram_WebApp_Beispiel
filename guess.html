@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Вгадай число</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input { width: 100%; padding: 10px; margin-top: 10px; font-size: 1.2em; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h2>Вгадай число від 1 до 100</h2>
+  <input id="guessInput" type="number" min="1" max="100" placeholder="Введи число" />
+  <button onclick="sendGuess()">Перевірити</button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    function sendGuess() {
+      const guess = document.getElementById('guessInput').value;
+      if (!guess || guess < 1 || guess > 100) {
+        alert('Введи число від 1 до 100!');
+        return;
+      }
+
+      tg.sendData(JSON.stringify({ guess }));
+      tg.close();
+    }
+  </script>
+</body>
+</html>
