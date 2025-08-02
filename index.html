@@ -116,6 +116,13 @@
     </div>
 
     <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Розгортає WebApp на весь екран
+        console.log('Telegram WebApp initialized!', tg);
+    });
+        
         const tg = window.Telegram.WebApp;
         const urlParams = new URLSearchParams(window.location.search);
         const gameId = urlParams.get('game_id');
