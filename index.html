@@ -199,6 +199,11 @@
         requestBtn.addEventListener('click', () => {
 
             alert('2. JS is working!'); // Має з'явитися спливаюче вікно
+
+            console.log('Button clicked!'); // Повинно з'явитися в консолі при кліку
+
+            const tg = window.Telegram.WebApp;
+            tg.sendData(JSON.stringify({ action: "test" }));
             
             const rank = document.getElementById('rank-select').value;
             const count = document.getElementById('count-select').value;
