@@ -111,195 +111,53 @@
             <button id="request-btn">Запросити</button>
             <button id="draw-btn">Взяти з колоди</button>
             <button id="bot-turn-btn" disabled>Хід бота</button>
-            
         </div>
         
         <div id="message" class="message"></div>
     </div>
 
     <script>
-
-        document.addEventListener('DOMContentLoaded', function() {
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Розгортає WebApp на весь екран
-        console.log('Telegram WebApp initialized!', tg);
-    });
-        
-        const tg = window.Telegram.WebApp;
-        const urlParams = new URLSearchParams(window.location.search);
-        const gameId = urlParams.get('game_id');
-        
-        let gameState = null;
-        
         // Ініціалізація WebApp
+        const tg = window.Telegram.WebApp;
         tg.expand();
         tg.MainButton.setText("Закрити гру").show().onClick(() => tg.close());
         
-        // Елементи інтерфейсу
-        const userHandEl = document.getElementById('user-hand');
-        const botHandEl = document.getElementById('bot-hand');
-        const userBoxesEl = document.getElementById('user-boxes');
-        const botBoxesEl = document.getElementById('bot-boxes');
-        const messageEl = document.getElementById('message');
-        const requestBtn = document.getElementById('request-btn');
-        const drawBtn = document.getElementById('draw-btn');
-        const botTurnBtn = document.getElementById('bot-turn-btn');
-        
-        // Завантаження стану гри
-        function loadGameState() {
+        // Діагностичний вивід
+        console.log("WebApp ініціалізовано. Початкові дані:", tg.initDataUnsafe);
+        alert("WebApp готовий до роботи!");
+
+        // Обробник для тестової кнопки
+        document.getElementById('test-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("Тестова кнопка натиснута");
             tg.sendData(JSON.stringify({
-                game_id: gameId,
-                action: "get_state"
+                action: "test",
+                message: "Тестовий запит з WebApp"
             }));
-        }
+        });
 
-        alert('JS is working!'); // Має з'явитися спливаюче вікно
-        
-        // Оновлення інтерфейсу
-        function updateUI() {
-            if (!gameState) return;
-            
-            // Оновлюємо карти гравця
-            userHandEl.innerHTML = '';
-            gameState.hands.user.forEach(card => {
-                const cardEl = document.createElement('div');
-                cardEl.className = `card ${getSuitClass(card)}`;
-                cardEl.textContent = card;
-                userHandEl.appendChild(cardEl);
-            });
-            
-            // Оновлюємо карти бота (лише кількість)
-            botHandEl.innerHTML = '';
-            const botCardsCount = gameState.hands.bot.length;
-            for (let i = 0; i < botCardsCount; i++) {
-                const cardBack = document.createElement('div');
-                cardBack.className = 'card';
-                cardBack.textContent = '🂠';
-                botHandEl.appendChild(cardBack);
-            }
-            
-            // Оновлюємо скриньки
-            userBoxesEl.textContent = gameState.boxes.user;
-            botBoxesEl.textContent = gameState.boxes.bot;
-            
-            // Оновлюємо кнопки
-            const isUserTurn = gameState.current_player === "user";
-            const canDraw = gameState.deck_index < gameState.deck.length;
-            
-            requestBtn.disabled = !isUserTurn;
-            drawBtn.disabled = !isUserTurn || !canDraw;
-            botTurnBtn.disabled = isUserTurn;
-            
-            // Показуємо останню дію
-            if (gameState.last_action) {
-                showMessage(gameState.last_action, 'success');
-                gameState.last_action = null;
-            }
-        }
-        
-        // Обробники подій
-        requestBtn.addEventListener('click', () => {
-
-            alert('2. JS is working!'); // Має з'явитися спливаюче вікно
-
-            console.log('Button clicked!'); // Повинно з'явитися в консолі при кліку
-
-            const tg = window.Telegram.WebApp;
-            tg.sendData(JSON.stringify({ action: "test" }));
-            
+        // Основний обробник гри
+        document.getElementById('request-btn').addEventListener('click', function(e) {
+            e.preventDefault();
             const rank = document.getElementById('rank-select').value;
             const count = document.getElementById('count-select').value;
             
             tg.sendData(JSON.stringify({
-                game_id: gameId,
                 action: "request_cards",
                 rank: rank,
-                count: parseInt(count)
+                count: count
             }));
         });
 
-
-        Telegram.WebApp.onEvent('mainButtonClicked', function() {
-            console.log('Main button clicked!');
-        });
-        
-
-        document.getElementById('request-btn').addEventListener('click', function() {
-            console.log('Button clicked!'); // Повинно з'явитися в консолі при кліку
-            alert('333 MY_request-btn JS is working!'); // Має з'явитися спливаюче вікно
-            const tg = window.Telegram.WebApp;
-            tg.sendData(JSON.stringify({ action: "test" }));
+        // Інші обробники...
+        document.getElementById('draw-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            tg.sendData(JSON.stringify({ action: "draw_card" }));
         });
 
-        document.getElementById('test-btn').addEventListener('click', function() {
-            const tg = window.Telegram.WebApp;
-            tg.sendData(JSON.stringify({ action: "hello" }));
-            tg.close();
-        });
-        
-        drawBtn.addEventListener('click', () => {
-            alert('444 drawBTN-btn JS is working!'); // Має з'явитися спливаюче вікно
-            tg.sendData(JSON.stringify({
-                game_id: gameId,
-                action: "draw_card"
-            }));
-        });
-        
-        botTurnBtn.addEventListener('click', () => {
-            tg.sendData(JSON.stringify({
-                game_id: gameId,
-                action: "bot_turn"
-            }));
-        });
-        
-        // Допоміжні функції
-        function getSuitClass(card) {
-            const suit = card.slice(-1);
-            switch(suit) {
-                case '♥': return 'hearts';
-                case '♦': return 'diamonds';
-                case '♣': return 'clubs';
-                case '♠': return 'spades';
-                default: return '';
-            }
-        }
-        
-        function showMessage(text, type) {
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-        }
-        
         // Обробник повідомлень від бота
         tg.onEvent('messageSent', (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.status === "success") {
-                    gameState = data.game;
-                    updateUI();
-                    if (data.message) {
-                        showMessage(data.message, 'success');
-                    }
-                    
-                    // Якщо хід бота - автоматично виконуємо його хід
-                    if (gameState.current_player === "bot") {
-                        setTimeout(() => {
-                            tg.sendData(JSON.stringify({
-                                game_id: gameId,
-                                action: "bot_turn"
-                            }));
-                        }, 1500);
-                    }
-                } else if (data.message) {
-                    showMessage(data.message, 'error');
-                }
-            } catch (e) {
-                console.error("Error parsing data:", e);
-            }
-        });
-        
-        // Початкове завантаження гри
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGameState();
+            console.log("Отримано відповідь від бота:", event.data);
         });
     </script>
 </body>
