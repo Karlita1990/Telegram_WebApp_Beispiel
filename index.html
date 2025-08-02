@@ -150,6 +150,8 @@
                 action: "get_state"
             }));
         }
+
+        alert('JS is working!'); // Має з'явитися спливаюче вікно
         
         // Оновлення інтерфейсу
         function updateUI() {
@@ -204,6 +206,18 @@
                 rank: rank,
                 count: parseInt(count)
             }));
+        });
+
+
+        Telegram.WebApp.onEvent('mainButtonClicked', function() {
+            console.log('Main button clicked!');
+        });
+        
+
+        document.getElementById('request-btn').addEventListener('click', function() {
+            console.log('Button clicked!'); // Повинно з'явитися в консолі при кліку
+            const tg = window.Telegram.WebApp;
+            tg.sendData(JSON.stringify({ action: "test" }));
         });
         
         drawBtn.addEventListener('click', () => {
