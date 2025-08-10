@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Моя карткова гра</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f3f3f3; }
+    .card {
+      width: 150px; height: 200px; background: #fff; border: 2px solid #333;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 24px; cursor: pointer; margin-top: 50px;
+    }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h1>Карткова гра</h1>
+  <div class="card" id="card">🂠</div>
+  <p id="status"></p>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // робимо сторінку повноекранною
+
+    const card = document.getElementById('card');
+    const status = document.getElementById('status');
+
+    card.addEventListener('click', () => {
+      card.textContent = "🂡"; // приклад відкриття карти
+      status.textContent = "Ви відкрили туз!";
+      
+      // Надсилаємо результат у бот
+      tg.sendData(JSON.stringify({ result: "Туз піковий" }));
+    });
+  </script>
+</body>
+</html>
