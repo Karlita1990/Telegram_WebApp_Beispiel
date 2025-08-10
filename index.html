@@ -1,164 +1,38 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Гра Скриньки</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 15px;
-            background-color: #f5f5f5;
-        }
-        .game-container {
-            max-width: 100%;
-        }
-        .player-area {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .hand {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 10px 0;
-        }
-        .card {
-            width: 50px;
-            height: 70px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .card.hearts { color: red; }
-        .card.diamonds { color: red; }
-        .card.clubs { color: black; }
-        .card.spades { color: black; }
-        .controls {
-            margin-top: 15px;
-        }
-        select, button {
-            padding: 8px 12px;
-            margin-right: 8px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:disabled {
-            background: #cccccc;
-        }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Моя карткова гра</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f3f3f3; }
+    .card {
+      width: 150px; height: 200px; background: #fff; border: 2px solid #333;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 24px; cursor: pointer; margin-top: 50px;
+    }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-    <div class="game-container">
-        <h2>🎲 Гра Скриньки</h2>
-        
-        <div class="player-area">
-            <h3>Ваші карти:</h3>
-            <div id="user-hand" class="hand"></div>
-            <div>Скриньки: <span id="user-boxes">0</span></div>
-        </div>
-        
-        <div class="player-area">
-            <h3>Бот:</h3>
-            <div id="bot-hand" class="hand"></div>
-            <div>Скриньки: <span id="bot-boxes">0</span></div>
-        </div>
-        
-        <div class="controls">
-            <select id="rank-select">
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-                <option value="J">J</option>
-                <option value="Q">Q</option>
-                <option value="K">K</option>
-                <option value="A">A</option>
-            </select>
-            
-            <select id="count-select">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-            </select>
+  <h1>Карткова гра</h1>
+  <div class="card" id="card">🂠</div>
+  <p id="status"></p>
 
-            <button id="test-btn">Тестова кнопка</button>
-            <button id="request-btn">Запросити</button>
-            <button id="draw-btn">Взяти з колоди</button>
-            <button id="bot-turn-btn" disabled>Хід бота</button>
-        </div>
-        
-        <div id="message" class="message"></div>
-    </div>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // робимо сторінку повноекранною
 
-    <script>
-        // Ініціалізація WebApp
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.MainButton.setText("Закрити гру").show().onClick(() => tg.close());
-        
-        // Діагностичний вивід
-        console.log("WebApp ініціалізовано. Початкові дані:", tg.initDataUnsafe);
-        alert("WebApp готовий до роботи!");
+    const card = document.getElementById('card');
+    const status = document.getElementById('status');
 
-        // Обробник для тестової кнопки
-        document.getElementById('test-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log("Тестова кнопка натиснута");
-            tg.sendData(JSON.stringify({
-                action: "test",
-                message: "Тестовий запит з WebApp"
-            }));
-        });
-
-        // Основний обробник гри
-        document.getElementById('request-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const rank = document.getElementById('rank-select').value;
-            const count = document.getElementById('count-select').value;
-            
-            tg.sendData(JSON.stringify({
-                action: "request_cards",
-                rank: rank,
-                count: count
-            }));
-        });
-
-        // Інші обробники...
-        document.getElementById('draw-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            tg.sendData(JSON.stringify({ action: "draw_card" }));
-        });
-
-        // Обробник повідомлень від бота
-        tg.onEvent('messageSent', (event) => {
-            console.log("Отримано відповідь від бота:", event.data);
-        });
-    </script>
+    card.addEventListener('click', () => {
+      card.textContent = "🂡"; // приклад відкриття карти
+      status.textContent = "Ви відкрили туз!";
+      
+      // Надсилаємо результат у бот
+      tg.sendData(JSON.stringify({ result: "Туз піковий" }));
+    });
+  </script>
 </body>
 </html>
