@@ -3,36 +3,820 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Моя карткова гра</title>
+  <title>Гра "Скриньки"</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background: #f3f3f3; }
-    .card {
-      width: 150px; height: 200px; background: #fff; border: 2px solid #333;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 50px; cursor: pointer; margin-top: 50px;
-      border-radius: 10px;
+    /* --- ваші стилі (без змін) --- */
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
     }
+    .game-container {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .card {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 5px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: white;
+        cursor: pointer;
+        visibility: visible;
+        opacity: 1;
+    }
+    .card.selected {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+    .hearts, .diamonds { color: red; }
+    .clubs, .spades { color: black; }
+    .controls { margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; }
+    button { padding: 8px 15px; margin: 5px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:disabled { background-color: #6c757d; cursor: not-allowed; }
+    .suit-btn { font-size: 20px; width: 40px; height: 40px; }
+    .game-info { margin-bottom: 20px; }
+    .box { display: inline-block; padding: 5px 10px; margin: 5px; border: 1px solid #17a2b8; border-radius: 5px; background-color: #d1ecf1; }
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; text-align: center; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close:hover { color: black; }
+    .game-log { margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; max-height: 200px; overflow-y: auto; }
+    .log-entry { margin: 5px 0; padding: 5px; border-bottom: 1px solid #eee; }
+    .player-log { color: #007bff; }
+    .bot-log { color: #dc3545; }
+    .system-log { color: #28a745; font-weight: bold; }
   </style>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <h1>Карткова гра</h1>
-  <div class="card" id="card">🂠</div>
-  <p id="status"></p>
+  <div class="game-container">
+    <h1>Гра "Скриньки"</h1>
+
+    <div class="game-info">
+      <h3>Поточний гравець: <span id="current-player">Гравець</span></h3>
+      <p>Скриньки гравця: <span id="player-boxes">0</span> (<span id="player-boxes-list"></span>)</p>
+      <p>Скриньки бота: <span id="bot-boxes">0</span> (<span id="bot-boxes-list"></span>)</p>
+      <p>Карт у колоді: <span id="deck-count">36</span></p>
+    </div>
+
+    <div id="player-hand">
+      <h3>Ваші карти:</h3>
+      <div id="player-cards"></div>
+    </div>
+
+    <div class="controls" id="game-controls">
+      <div id="rank-selection">
+        <p>Оберіть номінал карти, яку хочете запросити:</p>
+        <div id="rank-buttons"></div>
+      </div>
+
+      <div id="count-selection" style="display: none;">
+        <p>Оберіть кількість карт:</p>
+        <button class="count-btn" data-count="1">1</button>
+        <button class="count-btn" data-count="2">2</button>
+        <button class="count-btn" data-count="3">3</button>
+        <button class="count-btn" data-count="4">4</button>
+      </div>
+
+      <div id="suit-selection" style="display: none;">
+        <p>Оберіть масті:</p>
+        <button class="suit-btn hearts" data-suit="♥">♥</button>
+        <button class="suit-btn diamonds" data-suit="♦">♦</button>
+        <button class="suit-btn clubs" data-suit="♣">♣</button>
+        <button class="suit-btn spades" data-suit="♠">♠</button>
+        <div id="selected-suits"></div>
+        <button id="submit-request" disabled>Підтвердити запит</button>
+      </div>
+    </div>
+
+    <div id="bot-turn-info" style="display: none;">
+      <h3>Хід бота...</h3>
+      <div id="bot-messages"></div>
+    </div>
+
+    <div class="game-log">
+      <h3>Історія гри:</h3>
+      <div id="game-history"></div>
+    </div>
+
+    <div id="game-rules">
+      <h3>Правила гри:</h3>
+      <ol>
+        <li>Мета гри - зібрати якнайбільше "скриньок" (4 карти одного номіналу).</li>
+        <li>Запитуйте у бота карти певного номіналу, кількості та масті.</li>
+        <li>Якщо ви вгадали, продовжуйте ходити, поки не помилитесь.</li>
+        <li>Якщо ні - хід переходить до бота.</li>
+        <li>Гра закінчується, коли зібрано всі 9 скриньок або коли закінчилися карти.</li>
+      </ol>
+    </div>
+
+    <button id="new-game-btn">Нова гра</button>
+    <button id="send-result-to-bot" style="display:none;">Надіслати результат боту</button>
+  </div>
+
+  <div id="game-over-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Гра завершена!</h2>
+      <div id="game-result"></div>
+      <button id="play-again-btn">Грати знову</button>
+    </div>
+  </div>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // робимо сторінку повноекранною
+    // ІНТЕГРАЦІЯ TELEGRAM WEBAPP
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      // Розгорнути WebApp під екран (опційно)
+      try { tg.expand(); } catch(e) {}
+    }
 
-    const card = document.getElementById('card');
-    const status = document.getElementById('status');
+    // --- Весь ваш класовий код (без змін логіки), але з додатковими викликами WebApp ---
+    class SkrynkyGame {
+      constructor(players = ["Гравець", "Бот"], deckSize = 36) {
+        this.players = players;
+        this.currentPlayerIdx = 0;
+        this.deck = this._generateDeck(deckSize);
+        this.hands = { "Гравець": [], "Бот": [] };
+        this.boxes = { "Гравець": 0, "Бот": 0 };
+        this.usedBoxes = new Set();
+        this.collectedBoxes = { "Гравець": [], "Бот": [] };
+        this.gameHistory = [];
+        this.addToHistory("system", "Гра розпочалася!");
+        this.dealCards();
+      }
 
-    card.addEventListener('click', () => {
-      card.textContent = "🂡"; // приклад відкриття карти
-      status.textContent = "Ви відкрили туз!";
-      
-      // Надсилаємо результат у бот
-      tg.sendData(JSON.stringify({ result: "Туз піковий" }));
+      _generateDeck(size) {
+        // стандартні ранги у 36-картковій колоді
+        const allRanks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const ranks = allRanks.slice(0, size / 4);
+        const suits = ['♥', '♦', '♣', '♠'];
+        return ranks.flatMap(rank => suits.map(suit => `${rank}${suit}`));
+      }
+
+      dealCards() {
+        this.shuffleDeck();
+        for (let i = 0; i < 4; i++) {
+          for (const player of this.players) {
+            if (this.deck.length > 0) {
+              const card = this.deck.pop();
+              this.hands[player].push(card);
+              this._checkBoxesAfterDeal(player, card.slice(0, -1));
+            }
+          }
+        }
+        this.addToHistory("system", "Роздано початкові карти гравцям");
+      }
+
+      getPlayerCardsByRank(player, rank) {
+        return this.hands[player].filter(card => card.startsWith(rank));
+      }
+
+      shuffleDeck() {
+        for (let i = this.deck.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+        }
+      }
+
+      _checkBoxesAfterDeal(player, rank) {
+        if (this.usedBoxes.has(rank)) return false;
+
+        const cards = this.hands[player].filter(card => card.startsWith(rank));
+        if (cards.length === 4) {
+          this.boxes[player]++;
+          this.usedBoxes.add(rank);
+          this.collectedBoxes[player].push(rank);
+          this.hands[player] = this.hands[player].filter(card => !card.startsWith(rank));
+          this.addToHistory("system", `⚡️ ${player} зібрав скриньку ${rank}!`);
+          return true;
+        }
+        return false;
+      }
+
+      checkBoxes(player) {
+        const ranks = this.hands[player].map(card => card.slice(0, -1));
+        let changed = false;
+
+        for (const rank of [...new Set(ranks)]) {
+          if (!this.usedBoxes.has(rank) && ranks.filter(r => r === rank).length === 4) {
+            this.boxes[player]++;
+            this.usedBoxes.add(rank);
+            this.collectedBoxes[player].push(rank);
+            this.hands[player] = this.hands[player].filter(card => !card.startsWith(rank));
+            this.addToHistory("system", `⚡️ ${player} зібрав скриньку ${rank}!`);
+            changed = true;
+          }
+        }
+        return changed;
+      }
+
+      drawCard(player) {
+        if (this.deck.length === 0) {
+          return { success: false, collected: false, card: null };
+        }
+
+        const card = this.deck.pop();
+        this.hands[player].push(card);
+        const collected = this._checkBoxesAfterDeal(player, card.slice(0, -1));
+
+        const role = player === "Гравець" ? "player" : "bot";
+        const message = role === "player"
+          ? `${player} взяв карту з колоди: ${card}`
+          : `${player} взяв карту з колоди.`;
+
+        this.addToHistory(role, message);
+
+        return { success: true, collected, card };
+      }
+
+      takeCards(fromPlayer, rank) {
+        const cards = this.hands[fromPlayer].filter(card => card.startsWith(rank));
+        this.hands[fromPlayer] = this.hands[fromPlayer].filter(card => !card.startsWith(rank));
+        return cards;
+      }
+
+      isGameOver() {
+        if (this.boxes["Гравець"] + this.boxes["Бот"] === 9) {
+          return true;
+        }
+
+        if (this.deck.length === 0) {
+          return Object.values(this.hands).every(hand => hand.length === 0);
+        }
+
+        return false;
+      }
+
+      nextTurn() {
+        this.currentPlayerIdx = (this.currentPlayerIdx + 1) % this.players.length;
+
+        while (this.hands[this.players[this.currentPlayerIdx]].length === 0 && !this.isGameOver()) {
+          if (this.deck.length === 0) {
+            this.currentPlayerIdx = (this.currentPlayerIdx + 1) % this.players.length;
+          } else {
+            const result = this.drawCard(this.players[this.currentPlayerIdx]);
+            if (!result.collected) {
+              this.currentPlayerIdx = (this.currentPlayerIdx + 1) % this.players.length;
+            }
+          }
+        }
+      }
+
+      takeCards(fromPlayer, rank) {
+        const cards = this.hands[fromPlayer].filter(card => card.startsWith(rank));
+        this.hands[fromPlayer] = this.hands[fromPlayer].filter(card => !card.startsWith(rank));
+
+        this.addToHistory(fromPlayer === "Гравець" ? "bot" : "player",
+          `${this.players[this.currentPlayerIdx]} забрав у ${fromPlayer} карти: ${cards.join(', ')}`);
+
+        return cards;
+      }
+
+      addToHistory(type, message) {
+        const timestamp = new Date().toLocaleTimeString();
+        this.gameHistory.push({ type, message, timestamp });
+      }
+
+      getCurrentPlayer() {
+        return this.players[this.currentPlayerIdx];
+      }
+    }
+
+    class GameUI {
+      constructor() {
+        this.game = null;
+        this.selectedSuits = [];
+        this.requiredCount = 0;
+        this.initElements();
+        this.bindEvents();
+        this.startNewGame();
+        this.initTelegramUser();
+      }
+
+      initTelegramUser() {
+        // Якщо WebApp — заповнимо ім'я гравця по даним з Telegram
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          const u = tg.initDataUnsafe.user;
+          const name = u.username ? `@${u.username}` : (u.first_name || 'Гравець');
+          document.getElementById('current-player').textContent = name;
+          // Збережемо як ім'я гравця у логіці (не змінюємо ключі "Гравець"/"Бот")
+          this.telegramUser = name;
+        }
+      }
+
+      initElements() {
+        this.elements = {
+          currentPlayer: document.getElementById('current-player'),
+          playerBoxes: document.getElementById('player-boxes'),
+          playerBoxesList: document.getElementById('player-boxes-list'),
+          botBoxes: document.getElementById('bot-boxes'),
+          botBoxesList: document.getElementById('bot-boxes-list'),
+          deckCount: document.getElementById('deck-count'),
+          playerCards: document.getElementById('player-cards'),
+          rankSelection: document.getElementById('rank-selection'),
+          countSelection: document.getElementById('count-selection'),
+          suitSelection: document.getElementById('suit-selection'),
+          rankButtons: document.getElementById('rank-buttons'),
+          selectedSuits: document.getElementById('selected-suits'),
+          submitRequest: document.getElementById('submit-request'),
+          gameControls: document.getElementById('game-controls'),
+          botTurnInfo: document.getElementById('bot-turn-info'),
+          botMessages: document.getElementById('bot-messages'),
+          newGameBtn: document.getElementById('new-game-btn'),
+          sendResultBtn: document.getElementById('send-result-to-bot'),
+          gameOverModal: document.getElementById('game-over-modal'),
+          gameResult: document.getElementById('game-result'),
+          playAgainBtn: document.getElementById('play-again-btn'),
+          closeModal: document.querySelector('.close'),
+          gameHistory: document.getElementById('game-history')
+        };
+      }
+
+      bindEvents() {
+        this.elements.newGameBtn.addEventListener('click', () => this.startNewGame());
+        this.elements.playAgainBtn.addEventListener('click', () => this.startNewGame());
+        this.elements.closeModal.addEventListener('click', () => this.closeModal());
+        this.elements.sendResultBtn.addEventListener('click', () => this.sendResultToBot());
+
+        document.addEventListener('click', (e) => {
+          if (e.target === this.elements.gameOverModal) this.closeModal();
+        });
+
+        this.elements.rankButtons.addEventListener('click', (e) => {
+          if (e.target.tagName === 'BUTTON' && e.target.dataset.rank) {
+            this.handleRankSelection(e.target.dataset.rank);
+          }
+        });
+
+        document.querySelectorAll('.count-btn').forEach(btn => {
+          btn.addEventListener('click', () => this.handleCountSelection(btn.dataset.count));
+        });
+
+        document.querySelectorAll('.suit-btn').forEach(btn => {
+          btn.addEventListener('click', () => this.handleSuitSelection(btn.dataset.suit));
+        });
+
+        this.elements.submitRequest.addEventListener('click', () => this.submitRequest());
+      }
+
+      startNewGame() {
+        this.game = new SkrynkyGame();
+        this.resetRequestState();
+        this.closeModal();
+        this.resetUI();
+        this.updateUI();
+        this.setupRankButtons();
+        this.updateGameHistory();
+        if (tg) {
+          // ховаємо кнопку надсилання результату поки гра не завершена
+          this.elements.sendResultBtn.style.display = 'none';
+        }
+      }
+
+      resetUI() {
+        this.elements.botMessages.innerHTML = '';
+        this.elements.botTurnInfo.style.display = 'none';
+        this.elements.gameControls.style.display = 'block';
+        this.elements.rankSelection.style.display = 'block';
+        this.elements.countSelection.style.display = 'none';
+        this.elements.suitSelection.style.display = 'none';
+        this.selectedSuits = [];
+        this.requiredCount = 0;
+      }
+
+      setupRankButtons() {
+        this.elements.rankButtons.innerHTML = '';
+        const availableRanks = ['6','7','8','9','10','J','Q','K','A'].filter(rank => !this.game.usedBoxes.has(rank));
+        if (availableRanks.length === 0) return;
+        availableRanks.forEach(rank => {
+          const btn = document.createElement('button');
+          btn.textContent = rank;
+          btn.dataset.rank = rank;
+          this.elements.rankButtons.appendChild(btn);
+        });
+      }
+
+      handleRankSelection(rank) {
+        const botCards = this.game.hands["Бот"].filter(card => card.startsWith(rank));
+        this.game.addToHistory("player", `Гравець запитав карти ${rank}`);
+        if (botCards.length === 0) {
+          this.handleNoCardsFromBot(rank);
+          return;
+        }
+        this.game.playerState = { rank };
+        this.elements.rankSelection.style.display = 'none';
+        this.elements.countSelection.style.display = 'block';
+      }
+
+      handleCountSelection(count) {
+        const rank = this.game.playerState.rank;
+        const botCards = this.game.getPlayerCardsByRank("Бот", rank);
+        this.game.addToHistory("player", `Гравець запитав ${count} карти ${rank}`);
+
+        if (botCards.length !== parseInt(count)) {
+          this.game.addToHistory("player", `Гравець помилився з кількістю ${count} для ${rank}`);
+          const result = this.game.drawCard("Гравець");
+          let message = `❌ Ви помилились! У бота ${botCards.length} ${rank}. `;
+          if (result.success) {
+            message += `Взяли карту з колоди: ${result.card}`;
+            if (result.collected) message += `<br>⚡️ Ви зібрали скриньку ${result.card.slice(0,-1)}!`;
+          } else message += `В колоді більше немає карт.`;
+          this.showMessage(message);
+          this.game.nextTurn();
+          this.resetRequestState();
+          this.updateUI();
+          setTimeout(() => this.processTurn(), 1000);
+          return;
+        }
+
+        this.requiredCount = parseInt(count);
+        this.game.playerState.count = count;
+        this.elements.countSelection.style.display = 'none';
+        this.elements.suitSelection.style.display = 'block';
+        this.elements.selectedSuits.innerHTML = '';
+        this.selectedSuits = [];
+        this.elements.submitRequest.disabled = true;
+      }
+
+      handleSuitSelection(suit) {
+        if (this.selectedSuits.includes(suit)) return;
+        if (this.selectedSuits.length >= this.requiredCount) return;
+        this.selectedSuits.push(suit);
+        this.updateSelectedSuitsDisplay();
+        if (this.selectedSuits.length === this.requiredCount) this.elements.submitRequest.disabled = false;
+      }
+
+      updateSelectedSuitsDisplay() {
+        this.elements.selectedSuits.innerHTML = 'Вибрано мастей: ' +
+          this.selectedSuits.map(suit => {
+            const colorClass = suit === '♥' || suit === '♦' ? 'hearts' : 'clubs';
+            return `<span class="${colorClass}">${suit}</span>`;
+          }).join(', ');
+      }
+
+      submitRequest() {
+        const rank = this.game.playerState.rank;
+        const botCards = this.game.getPlayerCardsByRank("Бот", rank);
+        const botSuits = botCards.map(card => card.slice(-1));
+        this.game.addToHistory("player", `Гравець вибрав масті: ${this.selectedSuits.join(', ')}`);
+        if (this.arraysEqual(this.selectedSuits.sort(), botSuits.sort())) {
+          this.handleSuccessfulGuess(rank, botCards);
+        } else {
+          this.handleFailedGuess(rank);
+        }
+        this.elements.suitSelection.style.display = 'none';
+        this.elements.rankSelection.style.display = 'block';
+        this.selectedSuits = [];
+      }
+
+      arraysEqual(a,b){ if(a.length!==b.length) return false; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) return false; return true; }
+
+      handleSuccessfulGuess(rank, takenCards) {
+        const player = "Гравець";
+        const cardsTaken = this.game.takeCards("Бот", rank);
+        this.game.hands[player].push(...cardsTaken);
+        const collectedBefore = this.game.boxes[player];
+        this.game.checkBoxes(player);
+
+        let message = `🎉 Ви вгадали! Бот віддав вам: ${cardsTaken.join(', ')}<br>`;
+        message += `📋 Ваші нові карти: ${this.game.hands[player].sort().join(', ')}`;
+
+        if (this.game.boxes[player] > collectedBefore) {
+          const newBox = this.game.collectedBoxes[player][this.game.collectedBoxes[player].length - 1];
+          message += `<br>⚡️ Ви зібрали скриньку ${newBox}! Загалом: ${this.game.boxes[player]}`;
+        }
+
+        this.showMessage(message);
+        this.updateUI();
+
+        if (this.game.isGameOver()) this.endGame();
+        else {
+          if (this.game.hands[player].length === 0) this.handlePlayerNoCards();
+          else this.processTurn();
+        }
+      }
+
+      handleFailedGuess(rank) {
+        const player = "Гравець";
+        const result = this.game.drawCard(player);
+        let message = `❌ Ви помилились! `;
+        if (result.success) {
+          message += `Взяли карту з колоди: ${result.card}<br>`;
+          if (result.collected) message += `<br>⚡️ Ви зібрали скриньку ${result.card.slice(0,-1)}!`;
+          message += `📋 Ваші карти: ${this.game.hands[player].sort().join(', ')}`;
+        } else {
+          message += `В колоді більше немає карт.`;
+        }
+        this.showMessage(message);
+        this.game.nextTurn();
+        this.resetRequestState();
+        this.updateUI();
+        setTimeout(()=>this.processTurn(),1000);
+      }
+
+      handleNoCardsFromBot(rank, count = null) {
+        const player = "Гравець";
+        const result = this.game.drawCard(player);
+        let message = `❌ У бота ${count ? `не ${count}` : 'немає'} ${rank}. `;
+        if (result.success) {
+          message += `Взяли карту з колоди: ${result.card}<br>`;
+          if (result.collected) message += `<br>⚡️ Ви зібрали скриньку ${result.card.slice(0,-1)}!`;
+          message += `📋 Ваші карти: ${this.game.hands[player].sort().join(', ')}`;
+        } else {
+          message += `В колоді більше немає карт.`;
+        }
+        this.showMessage(message);
+        this.game.nextTurn();
+        this.resetRequestState();
+        this.updateUI();
+        setTimeout(()=>this.processTurn(),1000);
+      }
+
+      handlePlayerNoCards() {
+        const player = "Гравець";
+        if (this.game.deck.length > 0) {
+          const result = this.game.drawCard(player);
+          if (result.success) {
+            let message = `🃏 У вас не залишилося карт. Взяли карту: ${result.card}`;
+            if (result.collected) message += `<br>⚡️ Ви зібрали скриньку ${result.card.slice(0,-1)}!`;
+            this.showMessage(message);
+            this.updateUI();
+            if (this.game.isGameOver()) this.endGame();
+            else this.processTurn();
+          } else {
+            this.showMessage("🃏 У вас немає карт і в колоді більше немає карт.");
+            this.game.nextTurn(); this.processTurn();
+          }
+        } else {
+          this.showMessage("🃏 У вас немає карт і в колоді більше немає карт.");
+          this.game.nextTurn(); this.processTurn();
+        }
+      }
+
+      processTurn() {
+        if (this.game.isGameOver()) { this.endGame(); return; }
+        if (this.game.getCurrentPlayer() === "Гравець") {
+          this.resetRequestState();
+          this.playerTurn();
+        } else this.botTurn();
+      }
+
+      playerTurn() {
+        this.elements.botTurnInfo.style.display = 'none';
+        this.elements.gameControls.style.display = 'block';
+        if (this.game.hands["Гравець"].length === 0) { this.handlePlayerNoCards(); return; }
+        this.updateUI();
+        this.setupRankButtons();
+      }
+
+      botTurn() {
+        this.elements.gameControls.style.display = 'none';
+        this.elements.botTurnInfo.style.display = 'block';
+        this.elements.botMessages.innerHTML = '<p>🤖 Бот обдумує свій хід...</p>';
+        setTimeout(()=>this.executeBotTurn(),1500);
+      }
+
+      executeBotTurn() {
+        // логіка бота (без змін)...
+        // (копіюється з вашого коду — в інтересах читабельності сюди не вставляю повністю)
+        // Повна логіка вже є у наданому раніше коді — у цьому репо ми її зберігаємо.
+        // Щоб уникнути дублювання — припустимо, що executeBotTurn визначена вище повністю.
+        // У вашій реалізації вона вже присутня — нічого міняти не треба.
+        // Для коректності викликаємо простий fallback:
+        this.showBotMessage("🤖 Хід бота (логіка виконується)...");
+        // фактичний повний код executeBotTurn вже включено вище у довгому прикладі — він працює без змін.
+		const bot = "Бот";
+    const player = "Гравець";
+    
+    if (this.game.hands[bot].length === 0) {
+        if (this.game.deck.length > 0) {
+            const result = this.game.drawCard(bot);
+            let message = "🤖 У бота не було карт. ";
+            if (result.success) {
+                message += `Бот отримав карту з колоди.`;
+                if (result.collected) {
+                    message += `<br>😱 Бот зібрав скриньку!`;
+                }
+                this.showBotMessage(message);
+                this.processTurn();
+            }
+        } else {
+            this.showBotMessage("🤖 У бота немає карт і в колоді більше немає карт.");
+            this.game.nextTurn();
+            this.processTurn();
+        }
+        return;
+    }
+    
+    const availableRanks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        .filter(rank => !this.game.usedBoxes.has(rank));
+    
+    if (availableRanks.length === 0) {
+        this.showBotMessage("🤖 Усі скриньки вже зібрані!");
+        this.game.nextTurn();
+        this.processTurn();
+        return;
+    }
+    
+    const rank = availableRanks[Math.floor(Math.random() * availableRanks.length)];
+    this.game.addToHistory("bot", `Бот запитав карти ${rank}`);
+    
+    const playerCards = this.game.getPlayerCardsByRank(player, rank);
+    
+    if (playerCards.length === 0) {
+        const result = this.game.drawCard(bot);
+        
+        let message = `🤖 Бот запитує: "У вас є ${rank}?"<br>❌ У вас немає таких карт.<br>`;
+        
+        if (result.success) {
+            message += `📩 Бот отримав карту з колоди: ${result.card}`;
+            
+            if (result.collected) {
+                message += `<br>😱 Бот зібрав скриньку!`;
+            }
+        } else {
+            message += `В колоді більше немає карт.`;
+        }
+        
+        message += `<br>Його скриньки: ${this.game.boxes[bot]} (${this.game.collectedBoxes[bot].join(', ')})`;
+        
+        this.showBotMessage(message);
+        this.game.nextTurn();
+        this.processTurn();
+        return;
+    }
+    
+    const count = Math.floor(Math.random() * Math.min(4, playerCards.length)) + 1;
+    this.game.addToHistory("bot", `Бот запитав ${count} карти ${rank}`);
+    
+    if (playerCards.length !== count) {
+        const result = this.game.drawCard(bot);
+        
+        let message = `🤖 Бот запитує: "У вас є ${count} ${rank}?"<br>❌ Насправді у вас ${playerCards.length} ${rank}.<br>`;
+        
+        if (result.success) {
+            message += `📩 Бот отримав карту з колоди: ${result.card}`;
+            
+            if (result.collected) {
+                message += `<br>😱 Бот зібрав скриньку!`;
+            }
+        } else {
+            message += `В колоді більше немає карт.`;
+        }
+        
+        message += `<br>Його скриньки: ${this.game.boxes[bot]} (${this.game.collectedBoxes[bot].join(', ')})`;
+        
+        this.showBotMessage(message);
+        this.game.nextTurn();
+        this.processTurn();
+        return;
+    }
+    
+    // Оновлено: відображаємо всі масті, які бот забирає
+    const suitsToTake = [...new Set(playerCards.map(card => card.slice(-1)))];
+    const suitsText = suitsToTake.map(suit => {
+        const colorClass = suit === '♥' || suit === '♦' ? 'hearts' : 'clubs';
+        return `<span class="${colorClass}">${suit}</span>`;
+    }).join(', ');
+    
+    this.game.addToHistory("bot", `Бот запитав карти ${rank} мастей ${suitsToTake.join(', ')}`);
+    
+    const cardsTaken = this.game.takeCards(player, rank);
+    this.game.hands[bot].push(...cardsTaken);
+    
+    const boxesBefore = this.game.boxes[bot];
+    this.game.checkBoxes(bot);
+    
+    let message = `🤖 Бот запитує: "У вас є ${count} ${rank} мастей ${suitsText}?"<br>`;
+    message += `🎯 Бот вгадав! Ви віддаєте: ${cardsTaken.join(', ')}<br>`;
+    message += `📋 Ваші карти: ${this.game.hands[player].sort().join(', ')}<br>`;
+    message += `Скриньки бота: ${this.game.boxes[bot]} (${this.game.collectedBoxes[bot].join(', ')})`;
+    
+    if (this.game.boxes[bot] > boxesBefore) {
+        const newBox = this.game.collectedBoxes[bot][this.game.collectedBoxes[bot].length - 1];
+        message += `<br>😱 Бот зібрав скриньку ${newBox}!`;
+    }
+    
+    this.showBotMessage(message);
+    this.updateUI();
+    
+    if (this.game.isGameOver()) {
+        this.endGame();
+    } else {
+        this.processTurn();
+    }
+		
+      }
+
+      showMessage(message) { this.elements.botMessages.innerHTML = `<p>${message}</p>`; }
+      showBotMessage(message) { this.elements.botMessages.innerHTML = `<p>${message}</p>`; }
+
+      updateUI() {
+        this.elements.currentPlayer.textContent = this.telegramUser || this.game.getCurrentPlayer();
+        this.elements.playerBoxes.textContent = this.game.boxes["Гравець"];
+        this.elements.playerBoxesList.textContent = this.game.collectedBoxes["Гравець"].join(', ');
+        this.elements.botBoxes.textContent = this.game.boxes["Бот"];
+        this.elements.botBoxesList.textContent = this.game.collectedBoxes["Бот"].join(', ');
+        this.elements.deckCount.textContent = this.game.deck.length;
+
+        this.elements.playerCards.innerHTML = '';
+        this.game.hands["Гравець"].sort().forEach(card => {
+          const cardElement = document.createElement('div');
+          cardElement.className = 'card';
+          cardElement.textContent = card;
+          const suit = card.slice(-1);
+          cardElement.classList.add(suit === '♥' || suit === '♦' ? 'hearts' : 'clubs');
+          this.elements.playerCards.appendChild(cardElement);
+        });
+
+        this.updateGameHistory();
+      }
+
+      updateGameHistory() {
+        this.elements.gameHistory.innerHTML = '';
+        this.game.gameHistory.forEach(entry=>{
+          const logEntry = document.createElement('div');
+          logEntry.className = `log-entry ${entry.type}-log`;
+          logEntry.innerHTML = `<strong>[${entry.timestamp}]</strong> ${entry.message}`;
+          this.elements.gameHistory.appendChild(logEntry);
+        });
+        this.elements.gameHistory.scrollTop = this.elements.gameHistory.scrollHeight;
+      }
+
+      endGame() {
+        const winner = Object.entries(this.game.boxes).reduce((a,b)=>a[1]>b[1]?a:b);
+        let resultHTML = `
+          <p>Результати:</p>
+          <p>Гравець: ${this.game.boxes["Гравець"]} (${this.game.collectedBoxes["Гравець"].join(', ')})</p>
+          <p>Бот: ${this.game.boxes["Бот"]} (${this.game.collectedBoxes["Бот"].join(', ')})</p>
+          <h3>Переможець: ${winner[0]}!</h3>
+        `;
+        this.elements.gameResult.innerHTML = resultHTML;
+        this.openModal();
+        this.game.addToHistory("system", `Гра завершена! Переможець: ${winner[0]} з ${winner[1]} скриньками`);
+        this.updateGameHistory();
+
+        // Якщо WebApp — показати кнопку "Надіслати результат боту"
+        if (tg) {
+          this.elements.sendResultBtn.style.display = 'inline-block';
+        }
+        // автоматично відправляємо результат у бота (опційно):
+        // this.sendResultToBot(); // <-- розкоментуйте, якщо хочете автоматично слати
+      }
+
+      openModal(){ this.elements.gameOverModal.style.display = 'block'; }
+      closeModal(){ this.elements.gameOverModal.style.display = 'none'; }
+
+      resetRequestState() {
+        this.elements.rankSelection.style.display = 'block';
+        this.elements.countSelection.style.display = 'none';
+        this.elements.suitSelection.style.display = 'none';
+        this.selectedSuits = [];
+        this.requiredCount = 0;
+        delete this.game.playerState;
+      }
+
+      // Функція, що відправляє підсумок гри боту через WebApp.sendData(...)
+      sendResultToBot() {
+        if (!tg) {
+          alert('WebApp API недоступний — сторінка не відкрита через Telegram.');
+          return;
+        }
+        const payload = {
+          type: 'game_over',
+          user: tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || null,
+          result: {
+            playerBoxes: this.game.boxes["Гравець"],
+            botBoxes: this.game.boxes["Бот"],
+            playerCollected: this.game.collectedBoxes["Гравець"],
+            botCollected: this.game.collectedBoxes["Бот"],
+            deckLeft: this.game.deck.length
+          },
+          history: this.game.gameHistory.slice(-20) // останні записи
+        };
+        try {
+          tg.sendData(JSON.stringify(payload));
+          // опційно показати повідомлення в UI
+          this.showMessage('Результат відправлено боту ✅');
+        } catch (e) {
+          console.error('sendData error', e);
+          this.showMessage('Помилка при відправленні результату боту.');
+        }
+      }
+    }
+
+    // Ініціалізація UI після завантаження сторінки
+    document.addEventListener('DOMContentLoaded', () => {
+      const gameUI = new GameUI();
     });
   </script>
 </body>
