@@ -8,6 +8,7 @@
         body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background:#f5f5f5;}
         .game-container{ background:#fff;padding:20px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.08);}
         .card { display: inline-block; padding: 5px 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; background-color: white; cursor:pointer;}
+        .card.selected { background-color: #d4edda; border-color: #c3e6cb;}
         .hearts,.diamonds{ color: red; } .clubs,.spades{ color: black; }
         .controls{ margin: 20px 0; padding:15px; background:#f8f9fa;border-radius:6px;}
         .game-log{ margin-top:20px; padding:10px; background:#f8f9fa;border-radius:6px; max-height:200px; overflow-y:auto;}
@@ -17,6 +18,7 @@
         button{ padding:8px 12px; margin:4px; border-radius:6px; border:none; background:#007bff; color:#fff; cursor:pointer;}
         button:disabled{ background:#6c757d; cursor:not-allowed;}
         .suit-btn{ font-size:20px; width:40px; height:40px;}
+        .suit-btn.selected{ background-color: #0056b3;}
     </style>
 </head>
 <body>
@@ -34,6 +36,7 @@
                 <input id="join-room-id" placeholder="ID кімнати" maxlength="8">
                 <button id="join-room-btn">Приєднатись</button>
             </div>
+            
             <div id="players-list-lobby"></div>
             <button id="start-game-btn" style="display:none;">Почати гру</button>
         </div>
@@ -44,6 +47,7 @@
                     <div id="players-list"></div>
                     <h3>Поточний гравець: <span id="current-player"></span></h3>
                     <p>Карт у колоді: <span id="deck-count"></span></p>
+                    <div id="game-history"></div>
                 </div>
                 <div id="my-hand">
                     <h3>Ваші карти:</h3>
@@ -54,7 +58,7 @@
                         <p>Оберіть опонента:</p>
                         <select id="opponent-select"></select>
                     </div>
-                    <div id="rank-selection">
+                    <div id="rank-selection" style="display:none;">
                         <p>Оберіть номінал:</p>
                         <div id="rank-buttons"></div>
                     </div>
@@ -74,10 +78,6 @@
                         <div id="selected-suits-display"></div>
                         <button id="submit-request" disabled>Підтвердити запит</button>
                     </div>
-                </div>
-                <div class="game-log">
-                    <h3>Історія гри:</h3>
-                    <div id="game-history"></div>
                 </div>
             </div>
         </div>
@@ -104,6 +104,11 @@
             roomID = null,
             gameState = null,
             playerHand = [];
+        
+        let selectedOpponent = null;
+        let selectedRank = null;
+        let requiredCount = 0;
+        let selectedSuits = [];
 
         const el = {
             status: document.getElementById('status'),
@@ -111,12 +116,12 @@
             roomInfoDisplay: document.getElementById('room-info-display'),
             createRoomBtn: document.getElementById('create-room-btn'),
             showJoinBtn: document.getElementById('show-join-btn'),
-            joinDiv: document.getElementById('join-div'), // Оновлення
+            joinDiv: document.getElementById('join-div'),
             joinRoomId: document.getElementById('join-room-id'),
-            joinRoomBtn: document.getElementById('join-room-btn'), // Оновлення
+            joinRoomBtn: document.getElementById('join-room-btn'),
             lobbyView: document.getElementById('lobby-view'),
             gameView: document.getElementById('game-view'),
-            playersListLobby: document.getElementById('players-list-lobby'), // Оновлення
+            playersListLobby: document.getElementById('players-list-lobby'),
             playersList: document.getElementById('players-list'),
             startGameBtn: document.getElementById('start-game-btn'),
             gameStartedView: document.getElementById('game-started-view'),
@@ -124,7 +129,10 @@
             deckCount: document.getElementById('deck-count'),
             myCards: document.getElementById('my-cards'),
             opponentSelect: document.getElementById('opponent-select'),
+            rankSelection: document.getElementById('rank-selection'),
             rankButtons: document.getElementById('rank-buttons'),
+            countSelection: document.getElementById('count-selection'),
+            suitSelection: document.getElementById('suit-selection'),
             selectedSuitsDisplay: document.getElementById('selected-suits-display'),
             submitRequestBtn: document.getElementById('submit-request'),
             history: document.getElementById('game-history'),
@@ -156,11 +164,10 @@
             ws = new WebSocket(WS_URL);
             ws.onopen = () => {
                 setStatus("WS підключено");
-                // Обробка параметра з URL після підключення
                 const urlParams = new URLSearchParams(window.location.search);
                 const startParam = urlParams.get('start_param');
                 if (startParam) {
-                    joinRoom(startParam);
+                    sendJoin(startParam);
                 } else {
                     showLobbyView();
                 }
@@ -192,7 +199,6 @@
                 roomID = msg.room_id;
                 el.roomInfoDisplay.textContent = roomID;
                 updateLobbyPlayers(msg.players);
-                // Показати кнопку "Почати гру" тільки для першого гравця, якщо достатньо гравців
                 if (msg.players.length >= 2 && msg.players[0] === playerName) {
                     el.startGameBtn.style.display = "inline-block";
                 } else {
@@ -203,6 +209,11 @@
                 gameState = msg.state;
                 playerHand = msg.hand || [];
                 showGameView();
+                renderGameState();
+            }
+            if (msg.type === "next_step") {
+                gameState = msg.state;
+                playerHand = msg.hand || [];
                 renderGameState();
             }
             if (msg.type === "game_over") {
@@ -220,6 +231,7 @@
         function showGameView() {
             el.lobbyView.style.display = 'none';
             el.gameView.style.display = 'block';
+            el.gameStartedView.style.display = 'block'; // Цей рядок був відсутній
         }
 
         function updateLobbyPlayers(players) {
@@ -231,8 +243,9 @@
             el.currentPlayer.textContent = gameState.currentPlayer || '';
             el.deckCount.textContent = gameState.deckCount || 0;
             el.playersList.textContent = "Гравці: " + (gameState.players || []).join(", ");
+            el.history.innerHTML = (gameState.history || []).map(entry => `<div>${entry.message}</div>`).join('');
 
-            // Ваші карти
+            // Оновлення карт гравця
             el.myCards.innerHTML = '';
             (playerHand || []).sort().forEach(c => {
                 const d = document.createElement('div');
@@ -243,6 +256,14 @@
                 else d.classList.add('clubs');
                 el.myCards.appendChild(d);
             });
+
+            // Оновлення елементів управління для поточного гравця
+            if (gameState.currentPlayer === playerName) {
+                el.playerControls.style.display = 'block';
+                setupPlayerControls();
+            } else {
+                el.playerControls.style.display = 'none';
+            }
         }
         
         function showGameOver(winners) {
@@ -259,44 +280,199 @@
             }
         }
 
-        // Обробники подій для створення/приєднання до кімнати
-        el.createRoomBtn.addEventListener('click', () => {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                connectWS();
+        // Нові функції для керування інтерфейсом
+        function setupPlayerControls() {
+            // Оновлення списку опонентів
+            el.opponentSelect.innerHTML = '';
+            const otherPlayers = gameState.players.filter(p => p !== playerName);
+            if (otherPlayers.length > 0) {
+                otherPlayers.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p;
+                    option.textContent = p;
+                    el.opponentSelect.appendChild(option);
+                });
+                el.opponentSelection.style.display = 'block';
+                selectedOpponent = el.opponentSelect.value;
             } else {
-                sendJoin(null); // Створює нову кімнату
+                el.opponentSelection.style.display = 'none';
             }
-        });
 
+            // Оновлення кнопок номіналів
+            const myRanks = [...new Set(playerHand.map(c => c.slice(0, -1)))];
+            el.rankButtons.innerHTML = '';
+            myRanks.forEach(rank => {
+                const button = document.createElement('button');
+                button.textContent = rank;
+                button.className = 'rank-btn';
+                button.dataset.rank = rank;
+                button.addEventListener('click', () => selectRank(rank));
+                el.rankButtons.appendChild(button);
+            });
+            el.rankSelection.style.display = 'block';
+        }
+
+        function selectRank(rank) {
+            selectedRank = rank;
+            el.rankSelection.querySelectorAll('.rank-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.rank === rank) {
+                    btn.classList.add('selected');
+                }
+            });
+            // Відправляємо запит на сервер для перевірки кількості карт
+            if (selectedOpponent && selectedRank) {
+                ws.send(JSON.stringify({
+                    action: "check_opponent_cards",
+                    opponent: selectedOpponent,
+                    rank: selectedRank
+                }));
+            }
+        }
+        
+        function handleCountSelection(counts) {
+            el.countSelection.innerHTML = '<p>Оберіть кількість:</p>';
+            counts.forEach(count => {
+                const button = document.createElement('button');
+                button.className = 'count-btn';
+                button.textContent = count;
+                button.dataset.count = count;
+                button.addEventListener('click', () => selectCount(count));
+                el.countSelection.appendChild(button);
+            });
+            el.countSelection.style.display = 'block';
+            el.suitSelection.style.display = 'none';
+            el.submitRequestBtn.disabled = true;
+        }
+
+        function selectCount(count) {
+            requiredCount = count;
+            el.countSelection.querySelectorAll('.count-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (parseInt(btn.dataset.count) === count) {
+                    btn.classList.add('selected');
+                }
+            });
+
+            // Відправляємо запит на сервер для перевірки мастей
+            if (requiredCount > 0 && selectedOpponent && selectedRank) {
+                ws.send(JSON.stringify({
+                    action: "check_opponent_suits",
+                    opponent: selectedOpponent,
+                    rank: selectedRank,
+                    count: requiredCount
+                }));
+            }
+        }
+        
+        function handleSuitSelection(suits) {
+            selectedSuits = [];
+            el.suitSelection.style.display = 'block';
+            el.selectedSuitsDisplay.innerHTML = '';
+            el.submitRequestBtn.disabled = true;
+
+            el.suitSelection.querySelectorAll('.suit-btn').forEach(btn => {
+                const suit = btn.dataset.suit;
+                if (suits.includes(suit)) {
+                    btn.style.display = 'inline-block';
+                    btn.classList.remove('selected');
+                    btn.onclick = () => toggleSuit(suit);
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+        
+        function toggleSuit(suit) {
+            const index = selectedSuits.indexOf(suit);
+            if (index > -1) {
+                selectedSuits.splice(index, 1);
+            } else {
+                if (selectedSuits.length < requiredCount) {
+                    selectedSuits.push(suit);
+                }
+            }
+            updateSuitDisplay();
+            el.submitRequestBtn.disabled = selectedSuits.length !== requiredCount;
+        }
+        
+        function updateSuitDisplay() {
+            el.suitSelection.querySelectorAll('.suit-btn').forEach(btn => {
+                if (selectedSuits.includes(btn.dataset.suit)) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+        
+        function submitRequest() {
+            if (ws && ws.readyState === WebSocket.OPEN && selectedOpponent && selectedRank && requiredCount > 0 && selectedSuits.length === requiredCount) {
+                const payload = {
+                    action: "submit_request",
+                    opponent: selectedOpponent,
+                    rank: selectedRank,
+                    count: requiredCount,
+                    suits: selectedSuits
+                };
+                ws.send(JSON.stringify(payload));
+                // Скидаємо стан інтерфейсу після надсилання запиту
+                resetControls();
+            }
+        }
+
+        function resetControls() {
+            selectedOpponent = null;
+            selectedRank = null;
+            requiredCount = 0;
+            selectedSuits = [];
+            el.opponentSelection.style.display = 'none';
+            el.rankSelection.style.display = 'none';
+            el.countSelection.style.display = 'none';
+            el.suitSelection.style.display = 'none';
+            el.submitRequestBtn.disabled = true;
+        }
+        
+        // Обробники подій
+        el.createRoomBtn.addEventListener('click', () => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) { connectWS(); }
+            else { sendJoin(null); }
+        });
         el.showJoinBtn.addEventListener('click', () => {
             el.joinDiv.style.display = el.joinDiv.style.display === 'none' ? 'block' : 'none';
         });
-
         el.joinRoomBtn.addEventListener('click', () => {
             const id = el.joinRoomId.value.trim();
             if (id.length > 0) {
-                if (!ws || ws.readyState !== WebSocket.OPEN) {
-                    connectWS();
-                } else {
-                    sendJoin(id);
-                }
+                if (!ws || ws.readyState !== WebSocket.OPEN) { connectWS(); }
+                else { sendJoin(id); }
             }
         });
         
-        // Інші обробники подій
         el.startGameBtn.addEventListener('click', () => {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ action: "start_game" }));
             }
         });
+
+        // Слухачі для кнопок управління грою
+        el.opponentSelect.addEventListener('change', (e) => {
+            selectedOpponent = e.target.value;
+            // Після вибору опонента, відображаємо кнопки номіналів
+            el.rankSelection.style.display = 'block';
+            resetCountsAndSuits();
+        });
+        
+        el.submitRequestBtn.addEventListener('click', submitRequest);
         el.playAgainBtn.addEventListener('click', () => location.reload());
         el.closeModal.addEventListener('click', () => el.gameOverModal.style.display = 'none');
         
-        // Автоматичне підключення, якщо WebApp відкрито без start_param
+        // Початкове підключення
         if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.start_param) {
             connectWS();
+        } else {
+            connectWS();
         }
-
     </script>
 </body>
 </html>
