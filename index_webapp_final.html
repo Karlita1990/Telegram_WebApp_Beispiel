@@ -182,8 +182,8 @@
                 elements.gameStatus.textContent = `Гра розпочалась! Хід гравця: ${state.current_turn}`;
             } else {
                 // Виправлена логіка для відображення кнопки "Розпочати гру"
-                const isRoomOwner = state.room_owner === myName;
-                if (isRoomOwner) {
+                const isRoomAdmin = state.room_admin === myName;
+                if (isRoomAdmin) {
                     elements.startGameBtn.style.display = 'block';
                 } else {
                     elements.startGameBtn.style.display = 'none';
