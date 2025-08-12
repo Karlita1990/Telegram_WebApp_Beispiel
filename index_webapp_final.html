@@ -102,6 +102,7 @@
         let telegramUser = '';
         let myName = '';
         let myRoomId = '';
+        let myCards = [];
 
         const elements = {
             lobby: document.getElementById('lobby'),
@@ -130,7 +131,6 @@
             cardRankGuess: document.getElementById('card-rank-guess')
         };
 
-        // Ініціалізація Telegram WebApp та отримання даних користувача
         if (tg) {
             tg.ready();
             tg.expand();
@@ -181,9 +181,9 @@
                 elements.startGameBtn.style.display = 'none';
                 elements.gameStatus.textContent = `Гра розпочалась! Хід гравця: ${state.current_turn}`;
             } else {
-                // !!! ВИПРАВЛЕННЯ: Кнопка "Розпочати гру" показується лише першому гравцю !!!
-                const isFirstPlayer = state.players.length > 0 && state.players[0].name === myName;
-                if (isFirstPlayer) {
+                // Виправлена логіка для відображення кнопки "Розпочати гру"
+                const isRoomOwner = state.room_owner === myName;
+                if (isRoomOwner) {
                     elements.startGameBtn.style.display = 'block';
                 } else {
                     elements.startGameBtn.style.display = 'none';
