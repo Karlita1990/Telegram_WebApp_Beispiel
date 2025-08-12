@@ -5,6 +5,7 @@ import random
 import uuid
 import datetime
 import websockets
+import os # <-- Додайте цей імпорт
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
