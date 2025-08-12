@@ -1,484 +1,296 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Гра "Скриньки" — WebApp (final)</title>
+    <meta charset="UTF-8">
+    <title>Гра "Скриньки"</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background:#f5f5f5;}
-        .game-container{ background:#fff;padding:20px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.08);}
-        .card { display: inline-block; padding: 5px 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; background-color: white; cursor:pointer;}
-        .card.selected { background-color: #d4edda; border-color: #c3e6cb;}
-        .hearts,.diamonds{ color: red; } .clubs,.spades{ color: black; }
-        .controls{ margin: 20px 0; padding:15px; background:#f8f9fa;border-radius:6px;}
-        .game-log{ margin-top:20px; padding:10px; background:#f8f9fa;border-radius:6px; max-height:200px; overflow-y:auto;}
-        .modal{ display:none; position:fixed; z-index:2; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
-        .modal-content{ background:#fff; margin:12% auto; padding:20px; width:90%; max-width:520px; border-radius:8px;}
-        .close{ float:right; font-size:22px; cursor:pointer;}
-        button{ padding:8px 12px; margin:4px; border-radius:6px; border:none; background:#007bff; color:#fff; cursor:pointer;}
-        button:disabled{ background:#6c757d; cursor:not-allowed;}
-        .suit-btn{ font-size:20px; width:40px; height:40px;}
-        .suit-btn.selected{ background-color: #0056b3;}
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
+        .game-container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .card-container { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .card { width: 60px; height: 90px; border: 1px solid #ccc; border-radius: 5px; margin: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; background-color: white; }
+        .hearts, .diamonds { color: red; }
+        .clubs, .spades { color: black; }
+        .game-state-message { font-size: 1.2em; margin-bottom: 20px; }
+        #log { max-height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-top: 10px; text-align: left; background-color: #f9f9f9; }
+        #controls { margin-top: 20px; }
+        button, select, input { padding: 8px; margin: 5px; font-size: 1em; }
+        #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+        .collected-boxes { margin-top: 20px; text-align: left; }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Гра "Скриньки" (WebApp)</h1>
-        <div id="status">Підключення...</div>
+        <h1>Гра "Скриньки"</h1>
+        <div class="game-state-message" id="game-status">Очікування на гравців...</div>
 
-        <div id="lobby-view" style="display:none;">
-            <p>Ви: <strong id="player-name-display">Гість</strong></p>
-            <p>Кімната: <strong id="room-info-display">не створено</strong></p>
-
-            <button id="create-room-btn">Створити кімнату</button>
-            <button id="show-join-btn">Приєднатись</button>
-            <div id="join-div" style="display:none;">
-                <input id="join-room-id" placeholder="ID кімнати" maxlength="8">
-                <button id="join-room-btn">Приєднатись</button>
+        <div id="controls">
+            <button id="startGameBtn" onclick="startGame()" style="display: none;">Розпочати гру</button>
+            <div id="game-actions" style="display: none;">
+                <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
+                
+                <select id="target-player-select"></select>
+                <select id="card-rank-select">
+                    <option value="">Вибрати значення</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="J">J</option>
+                    <option value="Q">Q</option>
+                    <option value="K">K</option>
+                    <option value="A">A</option>
+                </select>
+                <button onclick="askForCard()">Запитати</button>
             </div>
             
-            <div id="players-list-lobby"></div>
-            <button id="start-game-btn" style="display:none;">Почати гру</button>
+            <div id="guess-count-form" style="display: none;">
+                <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
+                <input type="number" id="guess-count-input" min="1" max="4">
+                <button onclick="guessCount()">Вгадати кількість</button>
+            </div>
+            
+            <div id="guess-suits-form" style="display: none;">
+                <p>Скільки мастей ви вгадаєте?</p>
+                <div id="suits-checkboxes">
+                    <label><input type="checkbox" name="suit" value="♥"> ♥</label>
+                    <label><input type="checkbox" name="suit" value="♦"> ♦</label>
+                    <label><input type="checkbox" name="suit" value="♣"> ♣</label>
+                    <label><input type="checkbox" name="suit" value="♠"> ♠</label>
+                </div>
+                <button onclick="guessSuits()">Вгадати масті</button>
+            </div>
+
+            <div id="response-buttons" style="display: none;">
+                <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
+                <button onclick="respondToAsk('yes')">Так</button>
+                <button onclick="respondToAsk('no')">Ні</button>
+            </div>
         </div>
 
-        <div id="game-view" style="display:none;">
-            <div id="game-started-view">
-                <div class="game-info">
-                    <div id="players-list"></div>
-                    <h3>Поточний гравець: <span id="current-player"></span></h3>
-                    <p>Карт у колоді: <span id="deck-count"></span></p>
-                    <div id="game-history"></div>
-                </div>
-                <div id="my-hand">
-                    <h3>Ваші карти:</h3>
-                    <div id="my-cards"></div>
-                </div>
-                <div class="controls" id="player-controls">
-                    <div id="opponent-selection">
-                        <p>Оберіть опонента:</p>
-                        <select id="opponent-select"></select>
-                    </div>
-                    <div id="rank-selection" style="display:none;">
-                        <p>Оберіть номінал:</p>
-                        <div id="rank-buttons"></div>
-                    </div>
-                    <div id="count-selection" style="display:none;">
-                        <p>Оберіть кількість:</p>
-                        <button class="count-btn" data-count="1">1</button>
-                        <button class="count-btn" data-count="2">2</button>
-                        <button class="count-btn" data-count="3">3</button>
-                        <button class="count-btn" data-count="4">4</button>
-                    </div>
-                    <div id="suit-selection" style="display:none;">
-                        <p>Оберіть масті:</p>
-                        <button class="suit-btn hearts" data-suit="♥">♥</button>
-                        <button class="suit-btn diamonds" data-suit="♦">♦</button>
-                        <button class="suit-btn clubs" data-suit="♣">♣</button>
-                        <button class="suit-btn spades" data-suit="♠">♠</button>
-                        <div id="selected-suits-display"></div>
-                        <button id="submit-request" disabled>Підтвердити запит</button>
-                    </div>
-                </div>
-            </div>
+        <div id="game-info">
+            <p><strong>Ваші карти:</strong></p>
+            <div id="player-hand" class="card-container"></div>
+            <p><strong>Зібрані скриньки:</strong></p>
+            <div id="collected-boxes" class="collected-boxes"></div>
+            <p><strong>Колода:</strong> <span id="deck-size"></span> карт</p>
+            <p><strong>Гравці:</strong></p>
+            <ul id="players-list"></ul>
         </div>
-        
-        <div id="game-over-modal" class="modal">
-            <div class="modal-content">
-                <span class="close" id="close-modal">&times;</span>
-                <h2>Гра завершена!</h2>
-                <div id="game-result"></div>
-                <button id="play-again-btn">Грати знову</button>
-            </div>
+
+        <div class="message-box">
+            <h4>Журнал гри:</h4>
+            <div id="log"></div>
         </div>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com";
-        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-        if (tg) { try { tg.expand(); } catch(e) {} }
+        const tg = window.Telegram.WebApp;
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // !!! Змініть на публічну адресу вашого сервера !!!
+        let socket;
+        let telegramUser = '';
+        let myCards = [];
+        let currentPlayerName = '';
 
-        let ws = null,
-            playerName = null,
-            playerTgId = null,
-            roomID = null,
-            gameState = null,
-            playerHand = [];
-        
-        let selectedOpponent = null;
-        let selectedRank = null;
-        let requiredCount = 0;
-        let selectedSuits = [];
-
-        const el = {
-            status: document.getElementById('status'),
-            playerNameDisplay: document.getElementById('player-name-display'),
-            roomInfoDisplay: document.getElementById('room-info-display'),
-            createRoomBtn: document.getElementById('create-room-btn'),
-            showJoinBtn: document.getElementById('show-join-btn'),
-            joinDiv: document.getElementById('join-div'),
-            joinRoomId: document.getElementById('join-room-id'),
-            joinRoomBtn: document.getElementById('join-room-btn'),
-            lobbyView: document.getElementById('lobby-view'),
-            gameView: document.getElementById('game-view'),
-            playersListLobby: document.getElementById('players-list-lobby'),
+        const elements = {
+            gameStatus: document.getElementById('game-status'),
+            startGameBtn: document.getElementById('startGameBtn'),
+            gameActions: document.getElementById('game-actions'),
+            playerHand: document.getElementById('player-hand'),
+            collectedBoxes: document.getElementById('collected-boxes'),
             playersList: document.getElementById('players-list'),
-            startGameBtn: document.getElementById('start-game-btn'),
-            gameStartedView: document.getElementById('game-started-view'),
-            currentPlayer: document.getElementById('current-player'),
-            deckCount: document.getElementById('deck-count'),
-            myCards: document.getElementById('my-cards'),
-            opponentSelect: document.getElementById('opponent-select'),
-            rankSelection: document.getElementById('rank-selection'),
-            rankButtons: document.getElementById('rank-buttons'),
-            countSelection: document.getElementById('count-selection'),
-            suitSelection: document.getElementById('suit-selection'),
-            selectedSuitsDisplay: document.getElementById('selected-suits-display'),
-            submitRequestBtn: document.getElementById('submit-request'),
-            history: document.getElementById('game-history'),
-            playAgainBtn: document.getElementById('play-again-btn'),
-            closeModal: document.getElementById('close-modal'),
-            gameResult: document.getElementById('game-result'),
-            gameOverModal: document.getElementById('game-over-modal')
+            deckSize: document.getElementById('deck-size'),
+            log: document.getElementById('log'),
+            targetPlayerSelect: document.getElementById('target-player-select'),
+            cardRankSelect: document.getElementById('card-rank-select'),
+            guessCountForm: document.getElementById('guess-count-form'),
+            guessCountInput: document.getElementById('guess-count-input'),
+            guessSuitsForm: document.getElementById('guess-suits-form'),
+            suitsCheckboxes: document.getElementById('suits-checkboxes'),
+            responseButtons: document.getElementById('response-buttons'),
+            askingPlayerName: document.getElementById('asking-player-name'),
+            askedCardRank: document.getElementById('asked-card-rank'),
+            targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
+            cardRankGuess: document.getElementById('card-rank-guess')
         };
-        
-        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const u = tg.initDataUnsafe.user;
-            playerName = u.username ? `@${u.username}` : (u.first_name || `Player${Math.floor(Math.random() * 1000)}`);
-            playerTgId = u.id;
-        } else {
-            playerName = `Player${Math.floor(Math.random() * 10000)}`;
-        }
-        el.playerNameDisplay.textContent = playerName;
 
-        function setStatus(s) {
-            el.status.textContent = s;
-            console.log(s);
-        }
-
-        function connectWS() {
-            if (!WS_URL || WS_URL.includes("REPLACE_WITH")) {
-                setStatus("WS_URL не налаштовано.");
-                return;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const u = tg.initDataUnsafe.user;
+                telegramUser = u.username ? `@${u.username}` : (u.first_name || 'Гравець');
+            } else {
+                telegramUser = "Анонімний гравець";
             }
-            ws = new WebSocket(WS_URL);
-            ws.onopen = () => {
-                setStatus("WS підключено");
-                const urlParams = new URLSearchParams(window.location.search);
-                const startParam = urlParams.get('start_param');
-                if (startParam) {
-                    sendJoin(startParam);
-                } else {
-                    showLobbyView();
+        } else {
+            telegramUser = "Тестовий гравець";
+        }
+
+        function logMessage(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            elements.log.appendChild(p);
+            elements.log.scrollTop = elements.log.scrollHeight;
+        }
+
+        function updateUI(state) {
+            // Оновлення списку гравців
+            elements.playersList.innerHTML = '';
+            state.players.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
+                elements.playersList.appendChild(li);
+            });
+
+            // Оновлення руки гравця
+            elements.playerHand.innerHTML = '';
+            myCards.forEach(card => {
+                const div = document.createElement('div');
+                div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
+                div.textContent = card;
+                elements.playerHand.appendChild(div);
+            });
+
+            // Оновлення зібраних скриньок
+            elements.collectedBoxes.innerHTML = '';
+            state.players.find(p => p.name === telegramUser)?.collected_sets.forEach(rank => {
+                const p = document.createElement('p');
+                p.textContent = `Зібрано скриньку: ${rank}`;
+                elements.collectedBoxes.appendChild(p);
+            });
+
+            // Оновлення розміру колоди
+            elements.deckSize.textContent = state.deck_size;
+
+            // Оновлення стану гри
+            if (state.game_started) {
+                elements.startGameBtn.style.display = 'none';
+                elements.gameStatus.textContent = `Гра розпочалась! Хід гравця: ${state.current_turn}`;
+            } else {
+                elements.startGameBtn.style.display = 'block';
+                elements.gameStatus.textContent = `Очікування на гравців... (Всього ${state.players.length}/6)`;
+            }
+
+            // Оновлення елементів управління
+            hideAllControls();
+            if (state.current_turn === telegramUser) {
+                elements.gameActions.style.display = 'block';
+                elements.targetPlayerSelect.innerHTML = state.players
+                    .filter(p => p.name !== telegramUser)
+                    .map(p => `<option value="${p.name}">${p.name}</option>`)
+                    .join('');
+            } else {
+                elements.gameActions.style.display = 'none';
+            }
+        }
+
+        function hideAllControls() {
+            elements.gameActions.style.display = 'none';
+            elements.guessCountForm.style.display = 'none';
+            elements.guessSuitsForm.style.display = 'none';
+            elements.responseButtons.style.display = 'none';
+        }
+
+        function connectWebSocket() {
+            socket = new WebSocket(WS_URL);
+            
+            socket.onopen = () => {
+                logMessage("Підключено до сервера. Надсилаємо ім'я гравця...");
+                socket.send(JSON.stringify({ type: 'join', name: telegramUser }));
+            };
+            
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                logMessage(`Отримано: ${event.data}`);
+                
+                switch (data.type) {
+                    case 'update_state':
+                        myCards = data.my_hand;
+                        updateUI(data.state);
+                        break;
+                    case 'start_game':
+                        logMessage('Гра розпочалась!');
+                        break;
+                    case 'game_over':
+                        logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
+                        break;
+                    case 'ask_response_needed':
+                        elements.responseButtons.style.display = 'block';
+                        elements.askingPlayerName.textContent = data.asking_player;
+                        elements.askedCardRank.textContent = data.card_rank;
+                        break;
+                    case 'guess_count_needed':
+                        hideAllControls();
+                        elements.guessCountForm.style.display = 'block';
+                        elements.targetPlayerNameGuess.textContent = data.target_player;
+                        elements.cardRankGuess.textContent = data.card_rank;
+                        break;
+                    case 'guess_suits_needed':
+                        hideAllControls();
+                        elements.guessSuitsForm.style.display = 'block';
+                        break;
+                    case 'log':
+                        logMessage(data.message);
+                        break;
+                    case 'error':
+                        logMessage(`Помилка: ${data.message}`);
+                        break;
                 }
             };
-            ws.onmessage = (evt) => { handleServerMessage(JSON.parse(evt.data)); };
-            ws.onclose = () => { setStatus("WS закрито"); };
-            ws.onerror = (e) => { console.error("WS error", e); setStatus("WS помилка"); };
-        }
-        
-        function sendJoin(room_id) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                setStatus("WS не підключено");
-                return;
-            }
-            const payload = { action: "join", name: playerName, tg_id: playerTgId || null, tg_name: playerName, room_id: room_id };
-            ws.send(JSON.stringify(payload));
+
+            socket.onclose = () => {
+                logMessage("Відключено від сервера. Спроба перепідключення через 5 секунд...");
+                setTimeout(connectWebSocket, 5000);
+            };
+            
+            socket.onerror = (error) => {
+                logMessage(`Помилка WebSocket: ${error}`);
+            };
         }
 
-        function handleServerMessage(msg) {
-            console.log("recv", msg);
-            if (msg.type === "room_created") {
-                roomID = msg.room_id;
-                el.roomInfoDisplay.textContent = roomID;
-                setStatus("Кімната: " + roomID);
-                showLobbyView();
-                updateLobbyPlayers(msg.players);
-            }
-            if (msg.type === "room_state") {
-                roomID = msg.room_id;
-                el.roomInfoDisplay.textContent = roomID;
-                updateLobbyPlayers(msg.players);
-                if (msg.players.length >= 2 && msg.players[0] === playerName) {
-                    el.startGameBtn.style.display = "inline-block";
-                } else {
-                    el.startGameBtn.style.display = "none";
-                }
-            }
-            if (msg.type === "game_started" || msg.type === "state_update") {
-                gameState = msg.state;
-                playerHand = msg.hand || [];
-                showGameView();
-                renderGameState();
-            }
-            if (msg.type === "next_step") {
-                gameState = msg.state;
-                playerHand = msg.hand || [];
-                showGameView();
-                renderGameState();
-            }
-            if (msg.type === "game_over") {
-                gameState = msg.state;
-                showGameOver(msg.winners || []);
-                renderGameState();
+        function startGame() {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'start_game' }));
             }
         }
-        
-        function showLobbyView() {
-            el.lobbyView.style.display = 'block';
-            el.gameView.style.display = 'none';
-        }
 
-        function showGameView() {
-            el.lobbyView.style.display = 'none';
-            el.gameView.style.display = 'block';
-            el.gameStartedView.style.display = 'block'; // Цей рядок був відсутній
-        }
-
-        function updateLobbyPlayers(players) {
-            el.playersListLobby.textContent = "Гравці в кімнаті: " + (players || []).join(", ");
-        }
-
-        function renderGameState() {
-            if (!gameState) return;
-            el.currentPlayer.textContent = gameState.currentPlayer || '';
-            el.deckCount.textContent = gameState.deckCount || 0;
-            el.playersList.textContent = "Гравці: " + (gameState.players || []).join(", ");
-            el.history.innerHTML = (gameState.history || []).map(entry => `<div>${entry.message}</div>`).join('');
-
-            // Оновлення карт гравця
-            el.myCards.innerHTML = '';
-            (playerHand || []).sort().forEach(c => {
-                const d = document.createElement('div');
-                d.className = 'card';
-                d.textContent = c;
-                const suit = c.slice(-1);
-                if (suit === '♥' || suit === '♦') d.classList.add('hearts');
-                else d.classList.add('clubs');
-                el.myCards.appendChild(d);
-            });
-
-            // Оновлення елементів управління для поточного гравця
-            if (gameState.currentPlayer === playerName) {
-                el.playerControls.style.display = 'block';
-                setupPlayerControls();
+        function askForCard() {
+            const targetPlayer = elements.targetPlayerSelect.value;
+            const cardRank = elements.cardRankSelect.value;
+            if (targetPlayer && cardRank) {
+                socket.send(JSON.stringify({ type: 'ask_card', target: targetPlayer, card_rank: cardRank }));
             } else {
-                el.playerControls.style.display = 'none';
-                el.rankSelection.style.display = 'none'; // Сховати кнопки, якщо не хід гравця
+                logMessage('Будь ласка, виберіть гравця та значення карти.');
             }
         }
         
-        function showGameOver(winners) {
-            let html = "<h3>Результати:</h3>";
-            (gameState.players || []).forEach(p => {
-                html += `<p>${p}: ${(gameState.boxes && gameState.boxes[p]) || 0} скриньок</p>`;
-            });
-            html += `<h4>${winners.length > 1 ? 'Нічия! Переможці:' : 'Переможець:'} ${winners.join(', ')}</h4>`;
-            el.gameResult.innerHTML = html;
-            el.gameOverModal.style.display = 'block';
-            if (tg) {
-                const payload = { type: "game_over", result: { boxes: gameState.boxes, winners } };
-                try { tg.sendData(JSON.stringify(payload)); } catch (e) { console.warn("tg.sendData error", e); }
-            }
+        function respondToAsk(response) {
+            socket.send(JSON.stringify({ type: 'ask_response', response: response }));
+            hideAllControls();
         }
 
-        // Нові функції для керування інтерфейсом
-        function setupPlayerControls() {
-            // Оновлення списку опонентів
-            el.opponentSelect.innerHTML = '';
-            const otherPlayers = gameState.players.filter(p => p !== playerName);
-            if (otherPlayers.length > 0) {
-                otherPlayers.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = p;
-                    option.textContent = p;
-                    el.opponentSelect.appendChild(option);
-                });
-                el.opponentSelection.style.display = 'block';
-                selectedOpponent = el.opponentSelect.value;
+        function guessCount() {
+            const count = elements.guessCountInput.value;
+            if (count) {
+                socket.send(JSON.stringify({ type: 'guess_count', count: parseInt(count) }));
             } else {
-                el.opponentSelection.style.display = 'none';
+                logMessage('Будь ласка, введіть кількість.');
             }
+        }
 
-            // Оновлення кнопок номіналів
-            const myRanks = [...new Set(playerHand.map(c => c.slice(0, -1)))];
-            el.rankButtons.innerHTML = '';
-            if (myRanks.length > 0) {
-                myRanks.forEach(rank => {
-                    const button = document.createElement('button');
-                    button.textContent = rank;
-                    button.className = 'rank-btn';
-                    button.dataset.rank = rank;
-                    button.addEventListener('click', () => selectRank(rank));
-                    el.rankButtons.appendChild(button);
-                });
-                el.rankSelection.style.display = 'block';
+        function guessSuits() {
+            const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+            if (suits.length > 0) {
+                socket.send(JSON.stringify({ type: 'guess_suits', suits: suits }));
             } else {
-                el.rankSelection.style.display = 'none';
+                logMessage('Будь ласка, виберіть масті.');
             }
         }
 
-        function selectRank(rank) {
-            selectedRank = rank;
-            el.rankSelection.querySelectorAll('.rank-btn').forEach(btn => {
-                btn.classList.remove('selected');
-                if (btn.dataset.rank === rank) {
-                    btn.classList.add('selected');
-                }
-            });
-            // Відправляємо запит на сервер для перевірки кількості карт
-            if (selectedOpponent && selectedRank) {
-                ws.send(JSON.stringify({
-                    action: "check_opponent_cards",
-                    opponent: selectedOpponent,
-                    rank: selectedRank
-                }));
-            }
-        }
-        
-        function handleCountSelection(counts) {
-            el.countSelection.innerHTML = '<p>Оберіть кількість:</p>';
-            counts.forEach(count => {
-                const button = document.createElement('button');
-                button.className = 'count-btn';
-                button.textContent = count;
-                button.dataset.count = count;
-                button.addEventListener('click', () => selectCount(count));
-                el.countSelection.appendChild(button);
-            });
-            el.countSelection.style.display = 'block';
-            el.suitSelection.style.display = 'none';
-            el.submitRequestBtn.disabled = true;
-        }
-
-        function selectCount(count) {
-            requiredCount = count;
-            el.countSelection.querySelectorAll('.count-btn').forEach(btn => {
-                btn.classList.remove('selected');
-                if (parseInt(btn.dataset.count) === count) {
-                    btn.classList.add('selected');
-                }
-            });
-
-            // Відправляємо запит на сервер для перевірки мастей
-            if (requiredCount > 0 && selectedOpponent && selectedRank) {
-                ws.send(JSON.stringify({
-                    action: "check_opponent_suits",
-                    opponent: selectedOpponent,
-                    rank: selectedRank,
-                    count: requiredCount
-                }));
-            }
-        }
-        
-        function handleSuitSelection(suits) {
-            selectedSuits = [];
-            el.suitSelection.style.display = 'block';
-            el.selectedSuitsDisplay.innerHTML = '';
-            el.submitRequestBtn.disabled = true;
-
-            el.suitSelection.querySelectorAll('.suit-btn').forEach(btn => {
-                const suit = btn.dataset.suit;
-                if (suits.includes(suit)) {
-                    btn.style.display = 'inline-block';
-                    btn.classList.remove('selected');
-                    btn.onclick = () => toggleSuit(suit);
-                } else {
-                    btn.style.display = 'none';
-                }
-            });
-        }
-        
-        function toggleSuit(suit) {
-            const index = selectedSuits.indexOf(suit);
-            if (index > -1) {
-                selectedSuits.splice(index, 1);
-            } else {
-                if (selectedSuits.length < requiredCount) {
-                    selectedSuits.push(suit);
-                }
-            }
-            updateSuitDisplay();
-            el.submitRequestBtn.disabled = selectedSuits.length !== requiredCount;
-        }
-        
-        function updateSuitDisplay() {
-            el.suitSelection.querySelectorAll('.suit-btn').forEach(btn => {
-                if (selectedSuits.includes(btn.dataset.suit)) {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
-                }
-            });
-        }
-        
-        function submitRequest() {
-            if (ws && ws.readyState === WebSocket.OPEN && selectedOpponent && selectedRank && requiredCount > 0 && selectedSuits.length === requiredCount) {
-                const payload = {
-                    action: "submit_request",
-                    opponent: selectedOpponent,
-                    rank: selectedRank,
-                    count: requiredCount,
-                    suits: selectedSuits
-                };
-                ws.send(JSON.stringify(payload));
-                // Скидаємо стан інтерфейсу після надсилання запиту
-                resetControls();
-            }
-        }
-
-        function resetControls() {
-            selectedOpponent = null;
-            selectedRank = null;
-            requiredCount = 0;
-            selectedSuits = [];
-            el.opponentSelection.style.display = 'none';
-            el.rankSelection.style.display = 'none';
-            el.countSelection.style.display = 'none';
-            el.suitSelection.style.display = 'none';
-            el.submitRequestBtn.disabled = true;
-        }
-        
-        // Обробники подій
-        el.createRoomBtn.addEventListener('click', () => {
-            if (!ws || ws.readyState !== WebSocket.OPEN) { connectWS(); }
-            else { sendJoin(null); }
-        });
-        el.showJoinBtn.addEventListener('click', () => {
-            el.joinDiv.style.display = el.joinDiv.style.display === 'none' ? 'block' : 'none';
-        });
-        el.joinRoomBtn.addEventListener('click', () => {
-            const id = el.joinRoomId.value.trim();
-            if (id.length > 0) {
-                if (!ws || ws.readyState !== WebSocket.OPEN) { connectWS(); }
-                else { sendJoin(id); }
-            }
-        });
-        
-        el.startGameBtn.addEventListener('click', () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ action: "start_game" }));
-            }
-        });
-
-        // Слухачі для кнопок управління грою
-        el.opponentSelect.addEventListener('change', (e) => {
-            selectedOpponent = e.target.value;
-            // Після вибору опонента, відображаємо кнопки номіналів
-            el.rankSelection.style.display = 'block';
-            resetCountsAndSuits();
-        });
-        
-        el.submitRequestBtn.addEventListener('click', submitRequest);
-        el.playAgainBtn.addEventListener('click', () => location.reload());
-        el.closeModal.addEventListener('click', () => el.gameOverModal.style.display = 'none');
-        
-        // Початкове підключення
-        if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.start_param) {
-            connectWS();
-        } else {
-            connectWS();
-        }
+        connectWebSocket();
     </script>
 </body>
 </html>
+        
