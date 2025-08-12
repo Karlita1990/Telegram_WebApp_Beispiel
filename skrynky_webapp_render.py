@@ -1,253 +1,297 @@
 import asyncio
 import json
-import logging
 import random
-import uuid
-import datetime
 import websockets
-import os # <-- Додайте цей імпорт
 
-# Налаштування логування
-logging.basicConfig(level=logging.INFO)
+class Deck:
+    def __init__(self):
+        ranks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        suits = ['♥', '♦', '♣', '♠']
+        self.cards = [f"{rank}{suit}" for rank in ranks for suit in suits]
+        random.shuffle(self.cards)
 
-# Конфігурація гри
-SUITS = ["♥", "♦", "♣", "♠"]
-RANKS = ["6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-DECK = [r + s for r in RANKS for s in SUITS]
+    def draw(self, count=1):
+        drawn_cards = [self.cards.pop(0) for _ in range(min(count, len(self.cards)))]
+        return drawn_cards
 
-# Зберігання стану гри
-game_rooms = {}
-websocket_to_player = {}
+    def is_empty(self):
+        return len(self.cards) == 0
 
-class SkrynkyGame:
-    def __init__(self, room_id, players):
-        self.room_id = room_id
-        self.players = players
-        self.deck = DECK.copy()
-        self.hands = {p: [] for p in players}
-        self.boxes = {p: 0 for p in players}
-        self.collectedBoxes = {p: [] for p in players}
-        self.current_player_index = 0
-        self.history = []
+class Player:
+    def __init__(self, name, websocket):
+        self.name = name
+        self.websocket = websocket
+        self.hand = []
+        self.collected_sets = []
 
-        random.shuffle(self.deck)
-        self.deal_cards()
+class Game:
+    def __init__(self):
+        self.players = {}
+        self.deck = Deck()
+        self.game_started = False
+        self.current_turn_index = 0
+        self.asking_player = None
+        self.target_player = None
+        self.asked_rank = None
 
-        self.add_to_history("system", "Гра розпочалася! Роздано початкові карти гравцям.")
+    async def add_player(self, name, websocket):
+        if not self.game_started and len(self.players) < 6:
+            player = Player(name, websocket)
+            self.players[name] = player
+            return True, f"Гравець {name} приєднався."
+        elif self.game_started:
+            return False, "Гра вже розпочалась."
+        else:
+            return False, "Кімната повна."
 
-    def deal_cards(self):
-        for _ in range(5):
-            for player in self.players:
-                if self.deck:
-                    card = self.deck.pop(0)
-                    self.hands[player].append(card)
+    def remove_player(self, name):
+        if name in self.players:
+            del self.players[name]
 
-    def is_game_over(self):
-        return not self.deck and all(not hand for hand in self.hands.values())
+    async def start_game(self):
+        if len(self.players) >= 2 and not self.game_started:
+            self.game_started = True
+            self.deck = Deck()
+            
+            # Роздача по 4 карти
+            for _ in range(4):
+                for player_name in self.players:
+                    card = self.deck.draw()[0]
+                    self.players[player_name].hand.append(card)
+            
+            # Перша перевірка на скриньки
+            for player_name in self.players:
+                self.check_for_sets(self.players[player_name])
 
-    def get_game_state(self):
-        return {
-            "players": self.players,
-            "hands": self.hands,
-            "boxes": self.boxes,
-            "collectedBoxes": self.collectedBoxes,
-            "currentPlayer": self.players[self.current_player_index],
-            "deckCount": len(self.deck),
-            "history": self.history,
-        }
-
-    def get_card_rank(self, card):
-        return card[:-1]
-
-    def check_boxes(self, player_name):
+            await self.notify_all_state()
+            return True
+        return False
+        
+    def check_for_sets(self, player):
+        hand = player.hand
         ranks = {}
-        for card in self.hands[player_name]:
-            rank = self.get_card_rank(card)
-            if rank in ranks:
-                ranks[rank].append(card)
-            else:
-                ranks[rank] = [card]
-
-        for rank, cards in list(ranks.items()):
-            if len(cards) == 4:
-                self.boxes[player_name] += 1
-                self.collectedBoxes[player_name].append(rank)
-                self.hands[player_name] = [c for c in self.hands[player_name] if self.get_card_rank(c) != rank]
-                self.add_to_history("system", f"⚡️ {player_name} зібрав скриньку {rank}!")
-                
-    def get_winners(self):
-        if not self.boxes:
-            return []
-        max_boxes = max(self.boxes.values())
-        return [player for player, boxes in self.boxes.items() if boxes == max_boxes]
+        for card in hand:
+            rank = card[:-1]
+            ranks[rank] = ranks.get(rank, 0) + 1
+        
+        newly_collected_ranks = []
+        for rank, count in ranks.items():
+            if count == 4:
+                newly_collected_ranks.append(rank)
+                player.collected_sets.append(rank)
+        
+        if newly_collected_ranks:
+            # Видаляємо зібрані скриньки з руки гравця
+            player.hand = [card for card in hand if card[:-1] not in newly_collected_ranks]
+            return True
+        return False
 
     def next_turn(self):
-        self.current_player_index = (self.current_player_index + 1) % len(self.players)
+        player_names = list(self.players.keys())
+        self.current_turn_index = (self.current_turn_index + 1) % len(player_names)
+        self.asking_player = player_names[self.current_turn_index]
+        self.target_player = None
+        self.asked_rank = None
 
-    def add_to_history(self, player, message):
-        self.history.append({"player": player, "message": message, "timestamp": datetime.datetime.now(datetime.UTC).isoformat()})
-    
-    def take_cards(self, opponent, cards):
-        taken_cards = [c for c in self.hands[opponent] if c in cards]
-        self.hands[opponent] = [c for c in self.hands[opponent] if c not in taken_cards]
-        return taken_cards
+    async def check_end_game(self):
+        total_collected = sum(len(p.collected_sets) for p in self.players.values())
+        if total_collected == 9:
+            winner = max(self.players.values(), key=lambda p: len(p.collected_sets))
+            for p in self.players.values():
+                await p.websocket.send(json.dumps({'type': 'game_over', 'winner': winner.name}))
+            self.game_started = False
+            return True
+        return False
         
-    def draw_card(self, player):
-        if self.deck:
-            card = self.deck.pop(0)
-            self.hands[player].append(card)
-            self.add_to_history("system", f"⚡️ {player} взяв карту з колоди.")
+    async def handle_ask_card(self, asking_player_name, target_player_name, card_rank):
+        self.asking_player = asking_player_name
+        self.target_player = target_player_name
+        self.asked_rank = card_rank
+        
+        target_player = self.players.get(target_player_name)
+        if target_player:
+            message = {
+                'type': 'ask_response_needed',
+                'asking_player': asking_player_name,
+                'card_rank': card_rank
+            }
+            await target_player.websocket.send(json.dumps(message))
 
-async def notify_players(room_id, message):
-    if room_id in game_rooms:
-        game = game_rooms[room_id]["game"]
-        players = list(game_rooms[room_id]["players"].keys())
-        for player_name in players:
-            websocket = game_rooms[room_id]["players"][player_name]
-            try:
-                if game:
-                    player_message = {**message}
-                    player_message["hand"] = game.hands.get(player_name, [])
-                    await websocket.send(json.dumps(player_message))
-                else:
-                    await websocket.send(json.dumps(message))
-            except websockets.exceptions.ConnectionClosed:
-                logging.warning(f"Connection to {player_name} in room {room_id} lost. Removing player.")
-                del game_rooms[room_id]["players"][player_name]
+    async def handle_ask_response(self, target_player_name, response):
+        asking_player = self.players.get(self.asking_player)
+        target_player = self.players.get(target_player_name)
+        
+        if response == 'yes':
+            count = sum(1 for card in target_player.hand if card[:-1] == self.asked_rank)
+            await asking_player.websocket.send(json.dumps({
+                'type': 'guess_count_needed', 
+                'target_player': target_player_name,
+                'card_rank': self.asked_rank,
+                'count': count # Відправляємо кількість для перевірки
+            }))
+        else: # response == 'no'
+            # Гравець бере карту з колоди
+            if not self.deck.is_empty():
+                new_card = self.deck.draw()[0]
+                asking_player.hand.append(new_card)
+                await self.notify_all(f"Гравець {asking_player.name} не вгадав і бере карту з колоди.")
+                
+                # Перевірка на скриньку
+                if self.check_for_sets(asking_player):
+                    await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
+            
+            # Якщо немає карт на руці, бере з колоди
+            if not asking_player.hand and not self.deck.is_empty():
+                 new_card = self.deck.draw()[0]
+                 asking_player.hand.append(new_card)
+                 await self.notify_all(f"Гравець {asking_player.name} залишився без карт і бере нову з колоди.")
 
-async def handler(websocket, path):
+            await self.check_end_game()
+            self.next_turn()
+            await self.notify_all_state()
+
+    async def handle_guess_count(self, guessing_player_name, count):
+        asking_player = self.players.get(guessing_player_name)
+        target_player = self.players.get(self.target_player)
+        
+        correct_count = sum(1 for card in target_player.hand if card[:-1] == self.asked_rank)
+        
+        if count == correct_count:
+            await asking_player.websocket.send(json.dumps({
+                'type': 'guess_suits_needed'
+            }))
+            await self.notify_all(f"Гравець {asking_player.name} вгадав кількість карт: {count}. Він продовжує вгадувати масті.")
+        else:
+            if not self.deck.is_empty():
+                new_card = self.deck.draw()[0]
+                asking_player.hand.append(new_card)
+                await self.notify_all(f"Гравець {asking_player.name} не вгадав кількість і бере карту з колоди.")
+
+            if not asking_player.hand and not self.deck.is_empty():
+                 new_card = self.deck.draw()[0]
+                 asking_player.hand.append(new_card)
+                 await self.notify_all(f"Гравець {asking_player.name} залишився без карт і бере нову з колоди.")
+
+            await self.check_end_game()
+            self.next_turn()
+            await self.notify_all_state()
+
+    async def handle_guess_suits(self, asking_player_name, suits):
+        asking_player = self.players.get(asking_player_name)
+        target_player = self.players.get(self.target_player)
+        
+        target_cards_to_transfer = [card for card in target_player.hand if card[:-1] == self.asked_rank]
+        target_suits = [card[-1] for card in target_cards_to_transfer]
+        
+        guessed_correctly = set(suits) == set(target_suits)
+
+        if guessed_correctly:
+            # Передаємо карти
+            for card in target_cards_to_transfer:
+                target_player.hand.remove(card)
+                asking_player.hand.append(card)
+            await self.notify_all(f"Гравець {asking_player.name} вгадав масті і отримує карти від гравця {target_player.name}.")
+            
+            self.check_for_sets(asking_player)
+            
+            # Якщо у target_player не залишилося карт, він бере з колоди
+            if not target_player.hand and not self.deck.is_empty():
+                new_card = self.deck.draw()[0]
+                target_player.hand.append(new_card)
+                await self.notify_all(f"Гравець {target_player.name} залишився без карт і бере нову з колоди.")
+            
+            await self.check_end_game()
+            await self.notify_all_state()
+            
+            # Хід залишається у того ж гравця
+            self.asking_player = asking_player_name
+            self.target_player = None
+            self.asked_rank = None
+            await self.notify_all(f"Гравець {asking_player_name} продовжує свій хід.")
+
+        else:
+            if not self.deck.is_empty():
+                new_card = self.deck.draw()[0]
+                asking_player.hand.append(new_card)
+                await self.notify_all(f"Гравець {asking_player.name} не вгадав масті і бере карту з колоди.")
+            
+            if not asking_player.hand and not self.deck.is_empty():
+                 new_card = self.deck.draw()[0]
+                 asking_player.hand.append(new_card)
+                 await self.notify_all(f"Гравець {asking_player.name} залишився без карт і бере нову з колоди.")
+            
+            await self.check_end_game()
+            self.next_turn()
+            await self.notify_all_state()
+
+    def get_state(self):
+        player_list = [{'name': p.name, 'is_turn': p.name == list(self.players.keys())[self.current_turn_index], 'collected_boxes': len(p.collected_sets), 'collected_sets': p.collected_sets} for p in self.players.values()]
+        return {
+            'game_started': self.game_started,
+            'players': player_list,
+            'deck_size': len(self.deck.cards),
+            'current_turn': list(self.players.keys())[self.current_turn_index] if self.players else None
+        }
+
+    async def notify_all_state(self):
+        state = self.get_state()
+        for player in self.players.values():
+            player_state = {**state, 'my_hand': player.hand}
+            await player.websocket.send(json.dumps({'type': 'update_state', 'state': player_state}))
+
+    async def notify_all(self, message):
+        for player in self.players.values():
+            await player.websocket.send(json.dumps({'type': 'log', 'message': message}))
+
+
+game = Game()
+
+async def handler(websocket):
     player_name = None
-    room_id = None
-    
     try:
         async for message in websocket:
             data = json.loads(message)
-            action = data.get("action")
-
-            if action == "join":
-                player_name = data.get("name")
-                room_provided = data.get("room_id")
-
-                if room_provided:
-                    room_id = room_provided
+            
+            if data['type'] == 'join':
+                player_name = data['name']
+                success, msg = await game.add_player(player_name, websocket)
+                if success:
+                    print(f"Новий гравець приєднався: {player_name}")
+                    await game.notify_all(f"Гравець {player_name} приєднався до гри.")
+                    await game.notify_all_state()
                 else:
-                    room_id = str(uuid.uuid4())[:8]
-
-                if room_id not in game_rooms:
-                    game_rooms[room_id] = {"players": {}, "game": None}
-
-                game_rooms[room_id]["players"][player_name] = websocket
-                websocket_to_player[websocket] = {"name": player_name, "room": room_id}
-                
-                await websocket.send(json.dumps({"type": "room_created", "room_id": room_id}))
-                
-                players_in_room = list(game_rooms[room_id]["players"].keys())
-                await notify_players(room_id, {"type": "room_state", "players": players_in_room, "room_id": room_id})
-
-            elif action == "start_game":
-                if room_id in game_rooms and not game_rooms[room_id]["game"]:
-                    players_in_room = list(game_rooms[room_id]["players"].keys())
-                    if len(players_in_room) >= 2:
-                        game = SkrynkyGame(room_id, players_in_room)
-                        game_rooms[room_id]["game"] = game
-                        await notify_players(room_id, {"type": "game_started", "state": game.get_game_state()})
-
-            elif action == "check_opponent_cards":
-                game = game_rooms.get(room_id, {}).get("game")
-                if not game or game.players[game.current_player_index] != player_name:
-                    continue
-                
-                opponent = data["opponent"]
-                rank = data["rank"]
-                
-                opponent_cards_with_rank = [c for c in game.hands.get(opponent, []) if game.get_card_rank(c) == rank]
-                count = len(opponent_cards_with_rank)
-                
-                if count > 0:
-                    await websocket.send(json.dumps({"type": "count_options", "counts": [count]}))
-                else:
-                    game.add_to_history("system", f"❌ У {opponent} немає карт номіналу {rank}.")
-                    game.draw_card(player_name)
-                    game.check_boxes(player_name)
-                    game.next_turn()
-                    await notify_players(room_id, {"type": "next_step", "state": game.get_game_state()})
-
-            elif action == "check_opponent_suits":
-                game = game_rooms.get(room_id, {}).get("game")
-                if not game or game.players[game.current_player_index] != player_name:
-                    continue
-
-                opponent = data["opponent"]
-                rank = data["rank"]
-                count = data["count"]
-                
-                opponent_cards_with_rank = [c for c in game.hands.get(opponent, []) if game.get_card_rank(c) == rank]
-                if len(opponent_cards_with_rank) == count:
-                    suits = [c[-1] for c in opponent_cards_with_rank]
-                    await websocket.send(json.dumps({"type": "suit_options", "suits": suits}))
-                else:
-                    await websocket.send(json.dumps({"type": "error", "message": "Кількість карт не відповідає."}))
-
-            elif action == "submit_request":
-                game = game_rooms.get(room_id, {}).get("game")
-                if not game or game.players[game.current_player_index] != player_name:
-                    continue
-
-                opponent = data["opponent"]
-                rank = data["rank"]
-                count = data["count"]
-                guessed_suits = data["suits"]
-                
-                opponent_cards = [c for c in game.hands.get(opponent, []) if game.get_card_rank(c) == rank]
-                
-                if len(opponent_cards) == count:
-                    if sorted([c[-1] for c in opponent_cards]) == sorted(guessed_suits):
-                        game.add_to_history("system", f"✅ {player_name} вгадав карти {rank} у {opponent}!")
-                        
-                        taken_cards = game.take_cards(opponent, opponent_cards)
-                        game.hands[player_name].extend(taken_cards)
-                        
-                        game.check_boxes(player_name)
-                        
-                        game.add_to_history("system", f"⚡️ {player_name} забрав карти {', '.join(taken_cards)}! Хід продовжується.")
-
-                        if not game.hands[opponent] and game.deck:
-                            game.draw_card(opponent)
-                        
-                        if not game.hands[player_name] and game.deck:
-                            game.draw_card(player_name)
-
-                        if game.is_game_over():
-                            winners = game.get_winners()
-                            await notify_players(room_id, {"type": "game_over", "state": game.get_game_state(), "winners": winners})
-                        else:
-                            await notify_players(room_id, {"type": "next_step", "state": game.get_game_state()})
+                    await websocket.send(json.dumps({'type': 'error', 'message': msg}))
+            
+            # Інші типи повідомлень обробляються лише від зареєстрованого гравця
+            if player_name:
+                if data['type'] == 'start_game':
+                    if await game.start_game():
+                        await game.notify_all("Гра розпочалась!")
                     else:
-                        game.add_to_history("system", f"❌ {player_name} не вгадав масті карт {rank} у {opponent}.")
-                        game.draw_card(player_name)
-                        game.next_turn()
-                        await notify_players(room_id, {"type": "next_step", "state": game.get_game_state()})
-                else:
-                    game.add_to_history("system", f"❌ {player_name} не вгадав кількість карт {rank} у {opponent}.")
-                    game.draw_card(player_name)
-                    game.next_turn()
-                    await notify_players(room_id, {"type": "next_step", "state": game.get_game_state()})
-            
-    except websockets.exceptions.ConnectionClosed:
-        pass
-    finally:
-        if websocket in websocket_to_player:
-            player_info = websocket_to_player[websocket]
-            pname = player_info["name"]
-            rid = player_info["room"]
-            
-            if rid in game_rooms and pname in game_rooms[rid]["players"]:
-                del game_rooms[rid]["players"][pname]
-                logging.info(f"Player {pname} left room {rid}")
+                        await websocket.send(json.dumps({'type': 'error', 'message': "Недостатньо гравців."}))
+                
+                elif data['type'] == 'ask_card' and player_name == game.asking_player:
+                    await game.handle_ask_card(player_name, data['target'], data['card_rank'])
+                
+                elif data['type'] == 'ask_response' and player_name == game.target_player:
+                    await game.handle_ask_response(player_name, data['response'])
+                
+                elif data['type'] == 'guess_count' and player_name == game.asking_player:
+                    await game.handle_guess_count(player_name, data['count'])
+                
+                elif data['type'] == 'guess_suits' and player_name == game.asking_player:
+                    await game.handle_guess_suits(player_name, data['suits'])
 
-            if rid in game_rooms and not game_rooms[rid]["players"]:
-                del game_rooms[rid]
-                logging.info(f"Room {rid} is empty and was deleted.")
+    except websockets.exceptions.ConnectionClosedError:
+        print(f"З'єднання закрито для гравця {player_name}")
+    finally:
+        if player_name:
+            game.remove_player(player_name)
+            await game.notify_all(f"Гравець {player_name} відключився.")
+            if game.game_started and not game.players:
+                game.game_started = False
+                print("Всі гравці вийшли, гра зупинена.")
+            await game.notify_all_state()
 
 # ----------------------------
 # Запуск сервера
