@@ -214,6 +214,7 @@
             if (msg.type === "next_step") {
                 gameState = msg.state;
                 playerHand = msg.hand || [];
+                showGameView();
                 renderGameState();
             }
             if (msg.type === "game_over") {
@@ -263,6 +264,7 @@
                 setupPlayerControls();
             } else {
                 el.playerControls.style.display = 'none';
+                el.rankSelection.style.display = 'none'; // Сховати кнопки, якщо не хід гравця
             }
         }
         
@@ -301,15 +303,19 @@
             // Оновлення кнопок номіналів
             const myRanks = [...new Set(playerHand.map(c => c.slice(0, -1)))];
             el.rankButtons.innerHTML = '';
-            myRanks.forEach(rank => {
-                const button = document.createElement('button');
-                button.textContent = rank;
-                button.className = 'rank-btn';
-                button.dataset.rank = rank;
-                button.addEventListener('click', () => selectRank(rank));
-                el.rankButtons.appendChild(button);
-            });
-            el.rankSelection.style.display = 'block';
+            if (myRanks.length > 0) {
+                myRanks.forEach(rank => {
+                    const button = document.createElement('button');
+                    button.textContent = rank;
+                    button.className = 'rank-btn';
+                    button.dataset.rank = rank;
+                    button.addEventListener('click', () => selectRank(rank));
+                    el.rankButtons.appendChild(button);
+                });
+                el.rankSelection.style.display = 'block';
+            } else {
+                el.rankSelection.style.display = 'none';
+            }
         }
 
         function selectRank(rank) {
