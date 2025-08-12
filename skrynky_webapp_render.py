@@ -248,6 +248,7 @@ class Game:
 
 
 game = Game()
+game_rooms = {}  # Словник для зберігання об'єктів Game за ID кімнати
 
 async def handler(websocket):
     player_name = None
