@@ -153,6 +153,7 @@
         }
 
         function updateUI(state) {
+            // Оновлення списку гравців
             elements.playersList.innerHTML = '';
             state.players.forEach(p => {
                 const li = document.createElement('li');
@@ -160,6 +161,7 @@
                 elements.playersList.appendChild(li);
             });
 
+            // Оновлення карт гравця
             elements.playerHand.innerHTML = '';
             myCards.forEach(card => {
                 const div = document.createElement('div');
@@ -168,6 +170,7 @@
                 elements.playerHand.appendChild(div);
             });
 
+            // Оновлення зібраних скриньок
             elements.collectedBoxes.innerHTML = '';
             state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
                 const p = document.createElement('p');
@@ -175,13 +178,26 @@
                 elements.collectedBoxes.appendChild(p);
             });
 
+            // Оновлення розміру колоди
             elements.deckSize.textContent = state.deck_size;
 
+            // Логіка керування відображенням елементів управління
+            hideAllControls(); // Приховуємо всі елементи управління спочатку
+
             if (state.game_started) {
+                // Гра розпочалась
                 elements.startGameBtn.style.display = 'none';
                 elements.gameStatus.textContent = `Гра розпочалась! Хід гравця: ${state.current_turn}`;
+                
+                if (state.current_turn === myName) {
+                    elements.gameActions.style.display = 'block';
+                    elements.targetPlayerSelect.innerHTML = state.players
+                        .filter(p => p.name !== myName)
+                        .map(p => `<option value="${p.name}">${p.name}</option>`)
+                        .join('');
+                }
             } else {
-                // Виправлена логіка для відображення кнопки "Розпочати гру"
+                // Гра ще не розпочалась, чекаємо гравців
                 const isRoomAdmin = state.room_admin === myName;
                 if (isRoomAdmin) {
                     elements.startGameBtn.style.display = 'block';
@@ -189,17 +205,6 @@
                     elements.startGameBtn.style.display = 'none';
                 }
                 elements.gameStatus.textContent = `Очікування на гравців... (Всього ${state.players.length}/6)`;
-            }
-
-            hideAllControls();
-            if (state.current_turn === myName) {
-                elements.gameActions.style.display = 'block';
-                elements.targetPlayerSelect.innerHTML = state.players
-                    .filter(p => p.name !== myName)
-                    .map(p => `<option value="${p.name}">${p.name}</option>`)
-                    .join('');
-            } else {
-                elements.gameActions.style.display = 'none';
             }
         }
 
