@@ -181,7 +181,13 @@
                 elements.startGameBtn.style.display = 'none';
                 elements.gameStatus.textContent = `Гра розпочалась! Хід гравця: ${state.current_turn}`;
             } else {
-                elements.startGameBtn.style.display = 'block';
+                // !!! ВИПРАВЛЕННЯ: Кнопка "Розпочати гру" показується лише першому гравцю !!!
+                const isFirstPlayer = state.players.length > 0 && state.players[0].name === myName;
+                if (isFirstPlayer) {
+                    elements.startGameBtn.style.display = 'block';
+                } else {
+                    elements.startGameBtn.style.display = 'none';
+                }
                 elements.gameStatus.textContent = `Очікування на гравців... (Всього ${state.players.length}/6)`;
             }
 
