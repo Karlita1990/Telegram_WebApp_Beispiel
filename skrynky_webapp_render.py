@@ -40,6 +40,7 @@ class Game:
         self.asking_player = None
         self.target_player = None
         self.asked_rank = None
+        self.room_admin = None # Нове поле для зберігання адміністратора кімнати
 
     async def add_player(self, name, websocket):
         if not self.game_started and len(self.players) < 6:
@@ -47,6 +48,9 @@ class Game:
                 return False, "Гравець з таким ім'ям вже є в кімнаті."
             player = Player(name, websocket)
             self.players[name] = player
+            # Встановлюємо адміністратора кімнати при першому приєднанні
+            if self.room_admin is None:
+                self.room_admin = name
             return True, f"Гравець {name} приєднався."
         elif self.game_started:
             return False, "Гра вже розпочалась."
@@ -56,6 +60,10 @@ class Game:
     def remove_player(self, name):
         if name in self.players:
             del self.players[name]
+            if name == self.room_admin:
+                # Якщо адміністратор вийшов, передаємо права наступному гравцю
+                self.room_admin = next(iter(self.players), None)
+
 
     async def start_game(self):
         if len(self.players) >= 2 and not self.game_started:
@@ -229,14 +237,12 @@ class Game:
 
     def get_state(self):
         player_list = [{'name': p.name, 'is_turn': p.name == self.asking_player, 'collected_boxes': len(p.collected_sets), 'collected_sets': p.collected_sets} for p in self.players.values()]
-        # Додаємо ім'я власника кімнати
-        room_owner = list(self.players.keys())[0] if self.players else None
         return {
             'game_started': self.game_started,
             'players': player_list,
             'deck_size': len(self.deck.cards),
             'current_turn': self.asking_player,
-            'room_owner': room_owner  # Нове поле
+            'room_admin': self.room_admin
         }
 
     async def notify_all_state(self):
@@ -279,7 +285,7 @@ async def handler(websocket):
             
             if player_name and room_id and room_id in game_rooms:
                 game = game_rooms[room_id]
-                if data['type'] == 'start_game' and player_name == list(game.players.keys())[0]:
+                if data['type'] == 'start_game' and player_name == game.room_admin:
                     if await game.start_game():
                         await game.notify_all("Гра розпочалась!")
                     else:
