@@ -21,6 +21,13 @@
 <body>
     <div class="game-container">
         <h1>Гра "Скриньки"</h1>
+        <div id="lobby">
+            <p>Виберіть ім'я та кімнату для гри.</p>
+            <input type="text" id="player-name-input" placeholder="Ваше ім'я">
+            <input type="text" id="room-id-input" placeholder="ID кімнати">
+            <button onclick="joinRoom()">Приєднатися / Створити кімнату</button>
+            <p id="lobby-message"></p>
+        </div>        
         <div class="game-state-message" id="game-status">Очікування на гравців...</div>
 
         <div id="controls">
@@ -92,6 +99,8 @@
         let telegramUser = '';
         let myCards = [];
         let currentPlayerName = '';
+        let myName = '';
+        let myRoomId = '';
 
         const elements = {
             gameStatus: document.getElementById('game-status'),
