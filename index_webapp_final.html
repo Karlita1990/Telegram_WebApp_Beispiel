@@ -153,15 +153,12 @@
         }
 
         function updateUI(state) {
-            // Оновлення списку гравців
             elements.playersList.innerHTML = '';
             state.players.forEach(p => {
                 const li = document.createElement('li');
                 li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
                 elements.playersList.appendChild(li);
             });
-
-            // Оновлення карт гравця
             elements.playerHand.innerHTML = '';
             myCards.forEach(card => {
                 const div = document.createElement('div');
@@ -169,42 +166,37 @@
                 div.textContent = card;
                 elements.playerHand.appendChild(div);
             });
-
-            // Оновлення зібраних скриньок
             elements.collectedBoxes.innerHTML = '';
             state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
                 const p = document.createElement('p');
                 p.textContent = `Зібрано скриньку: ${rank}`;
                 elements.collectedBoxes.appendChild(p);
             });
-
-            // Оновлення розміру колоди
             elements.deckSize.textContent = state.deck_size;
+            elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
+            
+            // Нова логіка для відображення та активації кнопки "Розпочати гру"
+            handleStartGameButton(state);
 
-            // Логіка керування відображенням елементів управління
-            hideAllControls(); // Приховуємо всі елементи управління спочатку
+            hideAllControls();
+            if (state.current_turn === myName) {
+                elements.gameActions.style.display = 'block';
+                elements.targetPlayerSelect.innerHTML = state.players
+                    .filter(p => p.name !== myName)
+                    .map(p => `<option value="${p.name}">${p.name}</option>`)
+                    .join('');
+            }
+        }
 
-            if (state.game_started) {
-                // Гра розпочалась
-                elements.startGameBtn.style.display = 'none';
-                elements.gameStatus.textContent = `Гра розпочалась! Хід гравця: ${state.current_turn}`;
-                
-                if (state.current_turn === myName) {
-                    elements.gameActions.style.display = 'block';
-                    elements.targetPlayerSelect.innerHTML = state.players
-                        .filter(p => p.name !== myName)
-                        .map(p => `<option value="${p.name}">${p.name}</option>`)
-                        .join('');
-                }
+        function handleStartGameButton(state) {
+            const isRoomAdmin = state.room_admin === myName;
+            
+            if (isRoomAdmin && !state.game_started) {
+                elements.startGameBtn.style.display = 'block';
+                // Кнопка активна, якщо гравців більше 1
+                elements.startGameBtn.disabled = state.players.length < 2;
             } else {
-                // Гра ще не розпочалась, чекаємо гравців
-                const isRoomAdmin = state.room_admin === myName;
-                if (isRoomAdmin) {
-                    elements.startGameBtn.style.display = 'block';
-                } else {
-                    elements.startGameBtn.style.display = 'none';
-                }
-                elements.gameStatus.textContent = `Очікування на гравців... (Всього ${state.players.length}/6)`;
+                elements.startGameBtn.style.display = 'none';
             }
         }
 
