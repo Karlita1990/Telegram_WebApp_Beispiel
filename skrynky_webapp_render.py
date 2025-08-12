@@ -135,9 +135,14 @@ class SkrynkyGame:
             attempts += 1
 
     def addToHistory(self, type, message):
-        from datetime import datetime
-        timestamp = datetime.utcnow().isoformat() + "Z"
-        self.history.append({'type': type, 'message': message, 'timestamp': timestamp})
+    from datetime import datetime, timezone
+    # Отримуємо поточний час у форматі ISO 8601 з часовою зоною UTC
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    self.history.append({
+        'type': type,
+        'message': message,
+        'timestamp': timestamp
+    })
 
     def update_player_state(self):
         for player in self.players:
