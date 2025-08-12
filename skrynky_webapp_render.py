@@ -229,11 +229,14 @@ class Game:
 
     def get_state(self):
         player_list = [{'name': p.name, 'is_turn': p.name == self.asking_player, 'collected_boxes': len(p.collected_sets), 'collected_sets': p.collected_sets} for p in self.players.values()]
+        # Додаємо ім'я власника кімнати
+        room_owner = list(self.players.keys())[0] if self.players else None
         return {
             'game_started': self.game_started,
             'players': player_list,
             'deck_size': len(self.deck.cards),
-            'current_turn': self.asking_player
+            'current_turn': self.asking_player,
+            'room_owner': room_owner  # Нове поле
         }
 
     async def notify_all_state(self):
