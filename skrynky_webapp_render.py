@@ -186,7 +186,7 @@ async def handler(websocket, path):
 
                 global next_room_id
                 if room_provided:
-                    room_id = int(room_provided)
+                    room_id = room_provided
                     if room_id in game_rooms and len(game_rooms[room_id]["players"]) < 6:
                         game_rooms[room_id]["players"][player_name] = {"ws": websocket, "tg_id": tg_id, "tg_name": tg_name}
                         await notify_players(room_id, {"type": "info", "message": f"{player_name} приєднався до кімнати."})
