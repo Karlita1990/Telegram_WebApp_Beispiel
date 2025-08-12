@@ -3,6 +3,7 @@ import json
 import random
 import websockets
 import os
+import logging
 
 
 class Deck:
