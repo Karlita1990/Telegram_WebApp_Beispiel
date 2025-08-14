@@ -168,14 +168,13 @@
     // Використовуємо myHand, переданий як аргумент
     elements.playerHand.innerHTML = '';
             if (myHand && myHand.length > 0) {
-			alert("myHand.length: " + myHand.length);
-                myHand.forEach(card => {
+			    myHand.forEach(card => {
                     const div = document.createElement('div');
                     div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
                     div.textContent = card;
                     elements.playerHand.appendChild(div);
                 });
-            } else alert("myHand.length: " + myHand.length);
+            } 
 
     
     elements.collectedBoxes.innerHTML = '';
@@ -247,9 +246,6 @@
                         logMessage(`Приєднано до кімнати: ${myRoomId}`);
                         break;
                     case 'update_state':
-                        //myCards = data.my_hand;
-						alert ("etwas passiert!!!");
-						alert("Мої карти: " + data.state.my_hand);
                         updateUI(data.state, data.state.my_hand); // Передаємо my_hand як аргумент
                         break;
                     case 'start_game':
