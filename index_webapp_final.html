@@ -153,6 +153,24 @@
             elements.log.scrollTop = elements.log.scrollHeight;
         }
 
+
+
+
+
+        elements.joinBtn.addEventListener('click', () => {
+				    if (confirm("Ти хочеш приєднатися до гри?")) {
+                alert("Вітаю! Ти приєднався.");
+                    } else {
+                        alert("Може іншим разом 🙂");
+                    }
+		        });
+
+
+
+
+
+		
+
         function updateUI(state) {
             console.log("Оновлення UI. Отримано state:", state);
 
