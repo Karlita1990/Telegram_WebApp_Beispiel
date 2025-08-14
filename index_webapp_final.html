@@ -26,7 +26,7 @@
             <p>Виберіть ім'я та кімнату для гри.</p>
             <input type="text" id="player-name-input" placeholder="Ваше ім'я">
             <input type="text" id="room-id-input" placeholder="ID кімнати">
-            <button onclick="joinRoom()">Приєднатися / Створити кімнату</button>
+            <button id="join-btn" onclick="joinRoom()">Приєднатися / Створити кімнату</button>
             <p id="lobby-message"></p>
         </div>
 
@@ -129,7 +129,8 @@
             askingPlayerName: document.getElementById('asking-player-name'),
             askedCardRank: document.getElementById('asked-card-rank'),
             targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
-            cardRankGuess: document.getElementById('card-rank-guess')
+            cardRankGuess: document.getElementById('card-rank-guess'),
+			joinBtn: document.getElementById('join-btn')
         };
 
         if (tg) {
