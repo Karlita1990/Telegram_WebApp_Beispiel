@@ -2,137 +2,154 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Гра "Скриньки"</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гра "Скриньки" - Мультиплеер</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
-        .game-container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .card-container { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-        .card { width: 60px; height: 90px; border: 1px solid #ccc; border-radius: 5px; margin: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; background-color: white; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+        .game-container { background-color: white; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .card { display: inline-block; padding: 5px 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; background-color: white; cursor: pointer; }
+        .card.selected { background-color: #d4edda; border-color: #c3e6cb; }
         .hearts, .diamonds { color: red; }
         .clubs, .spades { color: black; }
-        .game-state-message { font-size: 1.2em; margin-bottom: 20px; }
-        #log { max-height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-top: 10px; text-align: left; background-color: #f9f9f9; }
-        #controls { margin-top: 20px; }
-        button, select, input { padding: 8px; margin: 5px; font-size: 1em; }
-        #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-        .collected-boxes { margin-top: 20px; text-align: left; }
+        .controls { margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; }
+        button { padding: 8px 15px; margin: 5px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .suit-btn { font-size: 20px; width: 40px; height: 40px; }
+        .game-info, .players-list { margin-bottom: 20px; }
+        .player-info { border-bottom: 1px solid #eee; padding: 5px 0; }
+        .box { display: inline-block; padding: 5px 10px; margin: 5px; border: 1px solid #17a2b8; border-radius: 5px; background-color: #d1ecf1; }
+        .game-log { margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; max-height: 200px; overflow-y: auto; }
+        .log-entry { margin: 5px 0; padding: 5px; border-bottom: 1px solid #eee; }
+        .system-log { font-weight: bold; color: #28a745; }
+        .turn-log { color: #007bff; }
+        .error-log { color: #dc3545; }
+        .lobby { text-align: center; }
+        .game-over-modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; text-align: center; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
+        #my-hand h3 { margin-bottom: 0; }
+        #opponent-selection { margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>Гра "Скриньки"</h1>
 
-        <div id="lobby">
-            <p>Виберіть ім'я та кімнату для гри.</p>
-            <input type="text" id="player-name-input" placeholder="Ваше ім'я">
-            <input type="text" id="room-id-input" placeholder="ID кімнати">
-            <button onclick="joinRoom()">Приєднатися / Створити кімнату</button>
-            <p id="lobby-message"></p>
+        <div id="lobby-view" class="lobby">
+            <h2>Ласкаво просимо!</h2>
+            <p>Введіть ваше ім'я та приєднайтесь до гри.</p>
+            <input type="text" id="player-name-input" placeholder="Ваше ім'я" required><br><br>
+            <input type="text" id="room-id-input" placeholder="ID кімнати (необов'язково)">
+            <button id="join-btn">Приєднатися</button>
+            <br>
+            <p id="room-info" style="margin-top: 10px;"></p>
         </div>
 
-        <div id="game" style="display: none;">
-            <div class="game-state-message" id="game-status">Очікування на гравців...</div>
-            <button id="startGameBtn" onclick="startGame()" >Розпочати нарешті гру</button>
+        <div id="game-view" style="display: none;">
+            <div id="players-list" class="game-info">
+                <h3>Гравці в кімнаті (<span id="player-count">0</span>)</h3>
+                <ul id="players-ul"></ul>
+            </div>
+            <button id="start-game-btn" style="display: none;">Почати гру</button>
 
-            <div id="controls">
-                <!-- Це коментар <button id="startGameBtn" onclick="startGame()" style="display: none;">Розпочати гру</button> -->
-                <div id="game-actions" style="display: none;">
-                    <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
-                    <select id="target-player-select"></select>
-                    <select id="card-rank-select">
-                        <option value="">Вибрати значення</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="J">J</option>
-                        <option value="Q">Q</option>
-                        <option value="K">K</option>
-                        <option value="A">A</option>
-                    </select>
-                    <button onclick="askForCard()">Запитати</button>
+            <div id="game-started-view" style="display: none;">
+                <div class="game-info">
+                    <h3>Поточний гравець: <span id="current-player"></span></h3>
+                    <p>Карт у колоді: <span id="deck-count"></span></p>
                 </div>
-                
-                <div id="guess-count-form" style="display: none;">
-                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
-                    <input type="number" id="guess-count-input" min="1" max="4">
-                    <button onclick="guessCount()">Вгадати кількість</button>
+
+                <div id="my-hand">
+                    <h3>Ваші карти:</h3>
+                    <div id="my-cards"></div>
                 </div>
-                
-                <div id="guess-suits-form" style="display: none;">
-                    <p>Скільки мастей ви вгадаєте?</p>
-                    <div id="suits-checkboxes">
-                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
-                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
-                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
-                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
+
+                <div class="controls" id="player-controls">
+                    <div id="opponent-selection">
+                        <p>Оберіть опонента:</p>
+                        <select id="opponent-select"></select>
                     </div>
-                    <button onclick="guessSuits()">Вгадати масті</button>
-                </div>
-
-                <div id="response-buttons" style="display: none;">
-                    <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
-                    <button onclick="respondToAsk('yes')">Так</button>
-                    <button onclick="respondToAsk('no')">Ні</button>
+                    <div id="rank-selection">
+                        <p>Оберіть номінал:</p>
+                        <div id="rank-buttons"></div>
+                    </div>
+                    <div id="count-selection" style="display: none;">
+                        <p>Оберіть кількість:</p>
+                        <button class="count-btn" data-count="1">1</button>
+                        <button class="count-btn" data-count="2">2</button>
+                        <button class="count-btn" data-count="3">3</button>
+                        <button class="count-btn" data-count="4">4</button>
+                    </div>
+                    <div id="suit-selection" style="display: none;">
+                        <p>Оберіть масті:</p>
+                        <button class="suit-btn hearts" data-suit="♥">♥</button>
+                        <button class="suit-btn diamonds" data-suit="♦">♦</button>
+                        <button class="suit-btn clubs" data-suit="♣">♣</button>
+                        <button class="suit-btn spades" data-suit="♠">♠</button>
+                        <div id="selected-suits-display"></div>
+                        <button id="submit-request" disabled>Підтвердити запит</button>
+                    </div>
                 </div>
             </div>
-
-            <div id="game-info">
-                <p><strong>Ваші карти:</strong></p>
-                <div id="player-hand" class="card-container"></div>
-                <p><strong>Зібрані скриньки:</strong></p>
-                <div id="collected-boxes" class="collected-boxes"></div>
-                <p><strong>Колода:</strong> <span id="deck-size"></span> карт</p>
-                <p><strong>Гравці:</strong></p>
-                <ul id="players-list"></ul>
+            
+            <div class="game-log">
+                <h3>Історія гри:</h3>
+                <div id="game-history"></div>
             </div>
         </div>
-        
-        <div class="message-box">
-            <h4>Журнал гри:</h4>
-            <div id="log"></div>
+    </div>
+    
+    <div id="game-over-modal" class="game-over-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Гра завершена!</h2>
+            <div id="game-result"></div>
+            <button id="play-again-btn">Грати знову</button>
         </div>
     </div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+   <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com";  // !!! Змініть на публічну адресу вашого сервера !!!
-        let socket;
-        let telegramUser = '';
-        let myName = '';
-        let myRoomId = '';
-        let myCards = [];
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; 
+        let playerName = '';
+        let roomID = null;
+        let gameState = null;
+        let playerHand = [];
+        let currentPlayer = '';
+        let currentStep = 'ask_rank';
+        let turnState = {};
 
         const elements = {
-            lobby: document.getElementById('lobby'),
-            game: document.getElementById('game'),
+            lobbyView: document.getElementById('lobby-view'),
+            gameView: document.getElementById('game-view'),
             playerNameInput: document.getElementById('player-name-input'),
             roomIdInput: document.getElementById('room-id-input'),
-            lobbyMessage: document.getElementById('lobby-message'),
-            gameStatus: document.getElementById('game-status'),
-            startGameBtn: document.getElementById('startGameBtn'),
-            gameActions: document.getElementById('game-actions'),
-            playerHand: document.getElementById('player-hand'),
-            collectedBoxes: document.getElementById('collected-boxes'),
-            playersList: document.getElementById('players-list'),
-            deckSize: document.getElementById('deck-size'),
-            log: document.getElementById('log'),
-            targetPlayerSelect: document.getElementById('target-player-select'),
-            cardRankSelect: document.getElementById('card-rank-select'),
-            guessCountForm: document.getElementById('guess-count-form'),
-            guessCountInput: document.getElementById('guess-count-input'),
-            guessSuitsForm: document.getElementById('guess-suits-form'),
-            suitsCheckboxes: document.getElementById('suits-checkboxes'),
-            responseButtons: document.getElementById('response-buttons'),
-            askingPlayerName: document.getElementById('asking-player-name'),
-            askedCardRank: document.getElementById('asked-card-rank'),
-            targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
-            cardRankGuess: document.getElementById('card-rank-guess')
+            joinBtn: document.getElementById('join-btn'),
+            roomInfo: document.getElementById('room-info'),
+            playersUl: document.getElementById('players-ul'),
+            playerCount: document.getElementById('player-count'),
+            startGameBtn: document.getElementById('start-game-btn'),
+            gameStartedView: document.getElementById('game-started-view'),
+            currentPlayerDisplay: document.getElementById('current-player'),
+            deckCount: document.getElementById('deck-count'),
+            myCards: document.getElementById('my-cards'),
+            playerControls: document.getElementById('player-controls'),
+            opponentSelect: document.getElementById('opponent-select'),
+            rankSelection: document.getElementById('rank-selection'),
+            rankButtons: document.getElementById('rank-buttons'),
+            countSelection: document.getElementById('count-selection'),
+            suitSelection: document.getElementById('suit-selection'),
+            selectedSuitsDisplay: document.getElementById('selected-suits-display'),
+            submitRequestBtn: document.getElementById('submit-request'),
+            gameHistory: document.getElementById('game-history'),
+            gameOverModal: document.getElementById('game-over-modal'),
+            gameResult: document.getElementById('game-result'),
+            playAgainBtn: document.getElementById('play-again-btn'),
+            closeModal: document.querySelector('.close')
         };
-
-        if (tg) {
+		
+		if (tg) {
             tg.ready();
             tg.expand();
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
@@ -146,189 +163,348 @@
             telegramUser = "Тестовий гравець";
         }
 
-        function logMessage(message) {
-            const p = document.createElement('p');
-            p.textContent = message;
-            elements.log.appendChild(p);
-            elements.log.scrollTop = elements.log.scrollHeight;
-        }
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log("Received:", data);
 
-        function updateUI(state) {
-            console.log("Оновлення UI. Отримано state:", state);
+            switch (data.type) {
+                case 'room_created':
+                    roomID = data.room_id;
+                    elements.roomInfo.textContent = `Кімнату створено. ID: ${roomID}. Очікування гравців...`;
+                    break;
+                case 'room_state':
+                    updateLobbyView(data);
+                    break;
+                case 'game_started':
+                case 'state_update': // Після успішного ходу гравця сервер повертає state_update
+                    gameState = data.state;
+                    playerHand = data.hand;
+                    currentPlayer = data.state.currentPlayer;
+                    
+                    if (playerName === currentPlayer) {
+                        currentStep = 'ask_rank'; // Скидаємо крок на початковий, щоб гравець міг продовжити хід
+                        turnState = {}; // Очищаємо стан ходу
+                    }
 
-            elements.playersList.innerHTML = '';
-            state.players.forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
-                elements.playersList.appendChild(li);
-            });
-            elements.playerHand.innerHTML = '';
-            myCards.forEach(card => {
-                const div = document.createElement('div');
-                div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
-                div.textContent = card;
-                elements.playerHand.appendChild(div);
-            });
-            elements.collectedBoxes.innerHTML = '';
-            state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
-                const p = document.createElement('p');
-                p.textContent = `Зібрано скриньку: ${rank}`;
-                elements.collectedBoxes.appendChild(p);
-            });
-            elements.deckSize.textContent = state.deck_size;
-            elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
-            
-            handleStartGameButton(state);
-
-            hideAllControls();
-            if (state.current_turn === myName) {
-                elements.gameActions.style.display = 'block';
-                elements.targetPlayerSelect.innerHTML = state.players
-                    .filter(p => p.name !== myName)
-                    .map(p => `<option value="${p.name}">${p.name}</option>`)
-                    .join('');
+                    updateUI();
+                    break;
+                case 'next_step':
+                    currentStep = data.step;
+                    turnState = { opponent: data.opponent, rank: data.rank, count: data.count };
+                    playerHand = data.hand;
+                    updateUI();
+                    break;
+                case 'game_over':
+                    gameState = data.state;
+                    showGameOverModal(data.state, data.winners);
+                    break;
+                case 'info':
+                    addLogEntry(data.message, 'system');
+                    break;
+                case 'error':
+                    addLogEntry(`Помилка: ${data.message}`, 'error');
+                    break;
             }
-        }
+        };
 
-        function handleStartGameButton(state) {
-            console.log("Виклик handleStartGameButton...");
-            const isRoomAdmin = state.room_admin === myName;
-            const canStartGame = !state.game_started && isRoomAdmin && state.players.length > 1;
+        ws.onopen = function() {
+            console.log("Connected to WebSocket server.");
+        };
 
-            console.log("isRoomAdmin:", isRoomAdmin);
-            console.log("!state.game_started:", !state.game_started);
-            console.log("state.players.length:", state.players.length);
-            console.log("Кнопка повинна бути активна:", canStartGame);
+        ws.onclose = function() {
+            addLogEntry("З'єднання з сервером втрачено.", 'error');
+        };
 
-            if (isRoomAdmin && !state.game_started) {
+        elements.joinBtn.addEventListener('click', () => {
+            playerName = elements.playerNameInput.value.trim();
+            roomID = elements.roomIdInput.value.trim();
+
+            if (playerName) {
+                const joinMessage = {
+                    action: "join",
+                    name: playerName,
+                    room_id: roomID || null
+                };
+                ws.send(JSON.stringify(joinMessage));
+                elements.lobbyView.style.display = 'none';
+                elements.gameView.style.display = 'block';
+            }
+        });
+
+        elements.startGameBtn.addEventListener('click', () => {
+            const startMessage = { action: "start_game" };
+            ws.send(JSON.stringify(startMessage));
+        });
+
+        elements.rankButtons.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' && e.target.dataset.rank) {
+                const rank = e.target.dataset.rank;
+                const opponent = elements.opponentSelect.value;
+                if (!opponent) {
+                    addLogEntry("Оберіть опонента!", 'error');
+                    return;
+                }
+                const turnMessage = { action: "make_turn", step: "ask_rank", opponent, rank };
+                ws.send(JSON.stringify(turnMessage));
+            }
+        });
+
+        document.querySelectorAll('.count-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const guess = parseInt(btn.dataset.count);
+                const turnMessage = { action: "make_turn", step: "guess_count", opponent: turnState.opponent, rank: turnState.rank, guess };
+                ws.send(JSON.stringify(turnMessage));
+            });
+        });
+
+        const selectedSuits = new Set();
+        document.querySelectorAll('.suit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const suit = btn.dataset.suit;
+                if (selectedSuits.has(suit)) {
+                    selectedSuits.delete(suit);
+                    btn.classList.remove('selected');
+                } else if (selectedSuits.size < turnState.count) {
+                    selectedSuits.add(suit);
+                    btn.classList.add('selected');
+                }
+                updateSelectedSuitsDisplay();
+                updateSubmitButtonState();
+            });
+        });
+
+        elements.submitRequestBtn.addEventListener('click', () => {
+            if (selectedSuits.size === turnState.count) {
+                const turnMessage = { action: "make_turn", step: "guess_suits", opponent: turnState.opponent, rank: turnState.rank, suits: Array.from(selectedSuits) };
+                ws.send(JSON.stringify(turnMessage));
+                selectedSuits.clear();
+                document.querySelectorAll('.suit-btn').forEach(btn => btn.classList.remove('selected'));
+                updateSubmitButtonState();
+            }
+        });
+
+        elements.playAgainBtn.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        elements.closeModal.addEventListener('click', () => {
+            elements.gameOverModal.style.display = 'none';
+        });
+
+        function updateLobbyView(data) {
+            elements.playersUl.innerHTML = '';
+            elements.playerCount.textContent = data.players.length;
+            data.players.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = p;
+                elements.playersUl.appendChild(li);
+            });
+
+            if (data.players.length >= 2) {
                 elements.startGameBtn.style.display = 'block';
-                elements.startGameBtn.disabled = !canStartGame;
-                console.log("Кнопка 'Розпочати гру' відображена. disabled:", elements.startGameBtn.disabled);
             } else {
                 elements.startGameBtn.style.display = 'none';
-                console.log("Кнопка 'Розпочати гру' прихована.");
             }
         }
 
-        function hideAllControls() {
-            elements.gameActions.style.display = 'none';
-            elements.guessCountForm.style.display = 'none';
-            elements.guessSuitsForm.style.display = 'none';
-            elements.responseButtons.style.display = 'none';
+        function updateUI() {
+            if (!gameState) return;
+
+            elements.gameStartedView.style.display = 'block';
+            elements.currentPlayerDisplay.textContent = gameState.currentPlayer;
+            elements.deckCount.textContent = gameState.deckCount;
+
+            updatePlayerHands();
+            updatePlayerInfo();
+            updateHistory();
+            updateControls();
         }
 
-        function joinRoom() {
-            myName = elements.playerNameInput.value.trim();
-            myRoomId = elements.roomIdInput.value.trim();
-
-            if (myName && myRoomId) {
-                connectWebSocket();
-            } else {
-                elements.lobbyMessage.textContent = 'Будь ласка, введіть ім\'я та ID кімнати.';
-            }
+        function updatePlayerHands() {
+            elements.myCards.innerHTML = '';
+            const myHand = playerHand || [];
+            myHand.sort().forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.textContent = card;
+                const suit = card.slice(-1);
+                cardElement.classList.add(suit === '♥' || suit === '♦' ? 'hearts' : 'clubs');
+                elements.myCards.appendChild(cardElement);
+            });
         }
 
-        function connectWebSocket() {
-            socket = new WebSocket(WS_URL);
-            
-            socket.onopen = () => {
-                logMessage("Підключено до сервера. Надсилаємо ім'я гравця та ID кімнати...");
-                socket.send(JSON.stringify({ type: 'join', name: myName, room: myRoomId }));
-            };
-            
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                logMessage(`Отримано: ${event.data}`);
+        function updatePlayerInfo() {
+            elements.playersUl.innerHTML = '';
+            elements.opponentSelect.innerHTML = '';
+
+            gameState.players.forEach(p => {
+                const li = document.createElement('li');
+                li.className = 'player-info';
+                let boxes = gameState.collectedBoxes[p].length;
+                let handSize = gameState.hands[p].length;
+                let infoText = `${p}: Скриньок: ${boxes} (${gameState.collectedBoxes[p].join(', ')}), Карт: ${handSize}`;
                 
-                switch (data.type) {
-                    case 'joined_room':
-                        elements.lobby.style.display = 'none';
-                        elements.game.style.display = 'block';
-                        logMessage(`Приєднано до кімнати: ${myRoomId}`);
-                        break;
-                    case 'update_state':
-                        myCards = data.my_hand;
-                        updateUI(data.state);
-                        break;
-                    case 'start_game':
-                        logMessage('Гра розпочалась!');
-                        break;
-                    case 'game_over':
-                        logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
-                        break;
-                    case 'ask_response_needed':
-                        hideAllControls();
-                        elements.responseButtons.style.display = 'block';
-                        elements.askingPlayerName.textContent = data.asking_player;
-                        elements.askedCardRank.textContent = data.card_rank;
-                        break;
-                    case 'guess_count_needed':
-                        hideAllControls();
-                        elements.guessCountForm.style.display = 'block';
-                        elements.targetPlayerNameGuess.textContent = data.target_player;
-                        elements.cardRankGuess.textContent = data.card_rank;
-                        break;
-                    case 'guess_suits_needed':
-                        hideAllControls();
-                        elements.guessSuitsForm.style.display = 'block';
-                        break;
-                    case 'log':
-                        logMessage(data.message);
-                        break;
-                    case 'error':
-                        logMessage(`Помилка: ${data.message}`);
-                        break;
+                if (p === playerName) {
+                    infoText += " (Ви)";
                 }
-            };
 
-            socket.onclose = () => {
-                logMessage("Відключено від сервера. Спроба перепідключення через 5 секунд...");
-                setTimeout(connectWebSocket, 5000);
-            };
+                li.textContent = infoText;
+                elements.playersUl.appendChild(li);
+
+                if (p !== playerName) {
+                    const option = document.createElement('option');
+                    option.value = p;
+                    option.textContent = p;
+                    elements.opponentSelect.appendChild(option);
+                }
+            });
+        }
+
+        function updateHistory() {
+            elements.gameHistory.innerHTML = '';
+            gameState.history.forEach(entry => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${entry.type}-log`;
+                logEntry.textContent = entry.message;
+                elements.gameHistory.appendChild(logEntry);
+            });
+            elements.gameHistory.scrollTop = elements.gameHistory.scrollHeight;
+        }
+
+        function updateControls() {
+            const isMyTurn = (playerName === gameState.currentPlayer);
+            elements.playerControls.style.display = isMyTurn ? 'block' : 'none';
+
+            if (isMyTurn) {
+                if (currentStep === 'ask_rank') {
+                    elements.rankSelection.style.display = 'block';
+                    elements.countSelection.style.display = 'none';
+                    elements.suitSelection.style.display = 'none';
+                    setupRankButtons();
+                } else if (currentStep === 'guess_count') {
+                    elements.rankSelection.style.display = 'none';
+                    elements.countSelection.style.display = 'block';
+                    elements.suitSelection.style.display = 'none';
+                } else if (currentStep === 'guess_suits') {
+                    elements.rankSelection.style.display = 'none';
+                    elements.countSelection.style.display = 'none';
+                    elements.suitSelection.style.display = 'block';
+                    updateSubmitButtonState();
+                }
+            } else {
+                currentStep = 'ask_rank';
+            }
+        }
+
+        function setupRankButtons() {
+            if (!gameState) return;
+            elements.rankButtons.innerHTML = '';
             
-            socket.onerror = (error) => {
-                logMessage(`Помилка WebSocket: ${error}`);
-            };
+            const allRanks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const availableRanks = allRanks.filter(rank => {
+                // Перевіряємо, чи номінал вже зібраний будь-яким гравцем
+                return !Object.values(gameState.collectedBoxes).some(boxes => boxes.includes(rank));
+            });
+
+            availableRanks.forEach(rank => {
+                const btn = document.createElement('button');
+                btn.textContent = rank;
+                btn.dataset.rank = rank;
+                elements.rankButtons.appendChild(btn);
+            });
         }
 
-        function startGame() {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'start_game', room: myRoomId }));
+        function updateSelectedSuitsDisplay() {
+            const suits = Array.from(selectedSuits);
+            elements.selectedSuitsDisplay.innerHTML = 'Вибрано мастей: ' + suits.map(suit => {
+                const colorClass = (suit === '♥' || suit === '♦') ? 'hearts' : 'clubs';
+                return `<span class="${colorClass}">${suit}</span>`;
+            }).join(', ');
+        }
+
+        function updateSubmitButtonState() {
+            elements.submitRequestBtn.disabled = selectedSuits.size !== turnState.count;
+        }
+
+        // cd /d "D:\Skrunka_Bot_TELEGRAM"
+		  
+		function showGameOverModal(state, winners) { 
+            const modal = document.getElementById("game-over-modal");
+            const gameResultDiv = document.getElementById("game-result");
+
+            let resultHTML = "<h3>Результати:</h3>";
+
+            // Підсумки по кожному гравцю
+            for (const player of state.players) {
+            const boxes = state.boxes[player];
+            const collected = state.collectedBoxes[player].join(', ');
+                resultHTML += `<p>${player}: ${boxes} скриньок (${collected})</p>`;
             }
-        }
 
-        function askForCard() {
-            const targetPlayer = elements.targetPlayerSelect.value;
-            const cardRank = elements.cardRankSelect.value;
-            if (targetPlayer && cardRank) {
-                socket.send(JSON.stringify({ type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank }));
+            const totalPlayers = state.players.length;
+
+            // Додаємо емодзі 🏆 біля переможців
+            const winnersWithTrophy = winners.map(name => `🏆 ${name}`);
+
+            // Масиви варіантів повідомлень
+            const singleWinnerMsgs = [
+                `Переможець: ${winnersWithTrophy[0]}!`,
+                `Чемпіон цього раунду — ${winnersWithTrophy[0]}!`,
+                `Беззаперечний лідер: ${winnersWithTrophy[0]}!`
+            ];
+
+            const fullTieMsgs = [
+                `Нічия! Всі грали добре і рівні між собою: ${winnersWithTrophy.join(', ')}!`,
+                `Повна рівність! ${winnersWithTrophy.join(', ')} поділили перше місце!`,
+                `Жодного явного лідера — усі переможці: ${winnersWithTrophy.join(', ')}!`
+            ];
+
+            const partialTieMsgs = [
+                `Перемогу розділяють: ${winnersWithTrophy.join(', ')}!`,
+                `Лідери цього раунду: ${winnersWithTrophy.join(', ')}!`,
+                `Декілька гравців вийшли на вершину: ${winnersWithTrophy.join(', ')}!`
+            ];
+
+            const noWinnerMsgs = [
+                `Переможця не визначено!`,
+                `Ніхто не здобув перемоги цього разу.`,
+                `Цього разу гра закінчилась без лідера.`
+            ];
+
+            // Функція для вибору випадкового повідомлення
+            function randomMsg(arr) {
+                return arr[Math.floor(Math.random() * arr.length)];
+            }
+
+            // Логіка вибору повідомлення
+            if (!winners || winners.length === 0) {
+                resultHTML += `<h3>${randomMsg(noWinnerMsgs)}</h3>`;
+            } else if (winners.length === 1) {
+                resultHTML += `<h3>${randomMsg(singleWinnerMsgs)}</h3>`;
+            } else if (winners.length === totalPlayers && totalPlayers === 3) {
+                resultHTML += `<h3>${randomMsg(fullTieMsgs)}</h3>`;
             } else {
-                logMessage('Будь ласка, виберіть гравця та значення карти.');
+                resultHTML += `<h3>${randomMsg(partialTieMsgs)}</h3>`;
             }
-        }
-        
-        function respondToAsk(response) {
-            socket.send(JSON.stringify({ type: 'ask_response', room: myRoomId, response: response }));
-            hideAllControls();
+
+                gameResultDiv.innerHTML = resultHTML;
+                modal.style.display = "block";
         }
 
-        function guessCount() {
-            const count = elements.guessCountInput.value;
-            if (count) {
-                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
-            } else {
-                logMessage('Будь ласка, введіть кількість.');
-            }
+        function addLogEntry(message, type) {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}-log`;
+            logEntry.textContent = message;
+            elements.gameHistory.appendChild(logEntry);
+            elements.gameHistory.scrollTop = elements.gameHistory.scrollHeight;
         }
 
-        function guessSuits() {
-            const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
-            if (suits.length > 0) {
-                socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
-            } else {
-                logMessage('Будь ласка, виберіть масті.');
+        window.onload = function() {
+            if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+                console.warn("WebSocket client must be served over HTTP or HTTPS.");
             }
-        }
+        };
     </script>
 </body>
 </html>
+
