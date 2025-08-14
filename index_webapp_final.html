@@ -16,6 +16,11 @@
         button, select, input { padding: 8px; margin: 5px; font-size: 1em; }
         #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
         .collected-boxes { margin-top: 20px; text-align: left; }
+        /* Новий стиль для неактивної кнопки */
+        #startGameBtn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -26,16 +31,15 @@
             <p>Виберіть ім'я та кімнату для гри.</p>
             <input type="text" id="player-name-input" placeholder="Ваше ім'я">
             <input type="text" id="room-id-input" placeholder="ID кімнати">
-            <button id="join-btn" onclick="joinRoom()">Приєднатися / Створити кімнату</button>
+            <button onclick="joinRoom()">Приєднатися / Створити кімнату</button>
             <p id="lobby-message"></p>
         </div>
 
         <div id="game" style="display: none;">
-            <div class="game-state-message" id="game-status">Очікування на гравців...</div>
-			<button id="startGameBtn" onclick="startGame()" style="display: none;" >Розпочати гру</button>
+            <div class="game-state-message" id="game-status">Очікування на jobanuch гравців...</div>
+            <button id="startGameBtn" onclick="startGame()" style="display: none;">Розпочати гру</button>
 
             <div id="controls">
-                <!-- Це коментар <button id="startGameBtn" onclick="startGame()" style="display: none;">Розпочати гру</button> -->
                 <div id="game-actions" style="display: none;">
                     <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
                     <select id="target-player-select"></select>
@@ -98,7 +102,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com";  // !!! Змініть на публічну адресу вашого сервера !!!
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // !!! Змініть на публічну адресу вашого сервера !!!
         let socket;
         let telegramUser = '';
         let myName = '';
@@ -129,8 +133,7 @@
             askingPlayerName: document.getElementById('asking-player-name'),
             askedCardRank: document.getElementById('asked-card-rank'),
             targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
-            cardRankGuess: document.getElementById('card-rank-guess'),
-			joinBtn: document.getElementById('join-btn')
+            cardRankGuess: document.getElementById('card-rank-guess')
         };
 
         if (tg) {
@@ -154,27 +157,7 @@
             elements.log.scrollTop = elements.log.scrollHeight;
         }
 
-
-
-
-
-        elements.joinBtn.addEventListener('click', () => {
-				    if (confirm("Ти хочеш приєднатися до гри?")) {
-                alert("Вітаю! Ти приєднався.");
-                    } else {
-                        alert("Може іншим разом 🙂");
-                    }
-		        });
-
-
-
-
-
-		
-
         function updateUI(state) {
-            console.log("Оновлення UI. Отримано state:", state);
-
             elements.playersList.innerHTML = '';
             state.players.forEach(p => {
                 const li = document.createElement('li');
@@ -210,22 +193,13 @@
         }
 
         function handleStartGameButton(state) {
-            console.log("Виклик handleStartGameButton...");
             const isRoomAdmin = state.room_admin === myName;
-            const canStartGame = !state.game_started && isRoomAdmin && state.players.length > 1;
-
-            console.log("isRoomAdmin:", isRoomAdmin);
-            console.log("!state.game_started:", !state.game_started);
-            console.log("state.players.length:", state.players.length);
-            console.log("Кнопка повинна бути активна:", canStartGame);
-
+            
             if (isRoomAdmin && !state.game_started) {
                 elements.startGameBtn.style.display = 'block';
-                elements.startGameBtn.disabled = !canStartGame;
-                console.log("Кнопка 'Розпочати гру' відображена. disabled:", elements.startGameBtn.disabled);
+                elements.startGameBtn.disabled = state.players.length < 2;
             } else {
                 elements.startGameBtn.style.display = 'none';
-                console.log("Кнопка 'Розпочати гру' прихована.");
             }
         }
 
