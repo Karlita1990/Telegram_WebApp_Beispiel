@@ -157,40 +157,43 @@
             elements.log.scrollTop = elements.log.scrollHeight;
         }
 
-        function updateUI(state) {
-            elements.playersList.innerHTML = '';
-            state.players.forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
-                elements.playersList.appendChild(li);
-            });
-            elements.playerHand.innerHTML = '';
-            myCards.forEach(card => {
-                const div = document.createElement('div');
-                div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
-                div.textContent = card;
-                elements.playerHand.appendChild(div);
-            });
-            elements.collectedBoxes.innerHTML = '';
-            state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
-                const p = document.createElement('p');
-                p.textContent = `Зібрано скриньку: ${rank}`;
-                elements.collectedBoxes.appendChild(p);
-            });
-            elements.deckSize.textContent = state.deck_size;
-            elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
-            
-            handleStartGameButton(state);
-
-            hideAllControls();
-            if (state.current_turn === myName) {
-                elements.gameActions.style.display = 'block';
-                elements.targetPlayerSelect.innerHTML = state.players
-                    .filter(p => p.name !== myName)
-                    .map(p => `<option value="${p.name}">${p.name}</option>`)
-                    .join('');
-            }
-        }
+        function updateUI(state, myHand) {
+    elements.playersList.innerHTML = '';
+    state.players.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
+        elements.playersList.appendChild(li);
+    });
+    
+    // Використовуємо myHand, переданий як аргумент
+    elements.playerHand.innerHTML = '';
+    myHand.forEach(card => {
+        const div = document.createElement('div');
+        div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
+        div.textContent = card;
+        elements.playerHand.appendChild(div);
+    });
+    
+    elements.collectedBoxes.innerHTML = '';
+    state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
+        const p = document.createElement('p');
+        p.textContent = `Зібрано скриньку: ${rank}`;
+        elements.collectedBoxes.appendChild(p);
+    });
+    elements.deckSize.textContent = state.deck_size;
+    elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
+    
+    handleStartGameButton(state);
+    
+    hideAllControls();
+    if (state.current_turn === myName) {
+        elements.gameActions.style.display = 'block';
+        elements.targetPlayerSelect.innerHTML = state.players
+            .filter(p => p.name !== myName)
+            .map(p => `<option value="${p.name}">${p.name}</option>`)
+            .join('');
+    }
+}
 
         function handleStartGameButton(state) {
             const isRoomAdmin = state.room_admin === myName;
@@ -240,8 +243,8 @@
                         logMessage(`Приєднано до кімнати: ${myRoomId}`);
                         break;
                     case 'update_state':
-                        myCards = data.my_hand;
-                        updateUI(data.state);
+                        //myCards = data.my_hand;
+                        updateUI(data.state, data.my_hand); // Передаємо my_hand як аргумент
                         break;
                     case 'start_game':
                         logMessage('Гра розпочалась!');
