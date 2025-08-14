@@ -249,8 +249,8 @@
                     case 'update_state':
                         //myCards = data.my_hand;
 						alert ("etwas passiert!!!");
-						alert("myCards: " + data.my_hand);
-                        updateUI(data.state, data.my_hand); // Передаємо my_hand як аргумент
+						alert("Мої карти: " + data.state.my_hand);
+                        updateUI(data.state, data.state.my_hand); // Передаємо my_hand як аргумент
                         break;
                     case 'start_game':
                         logMessage('Гра розпочалась!');
