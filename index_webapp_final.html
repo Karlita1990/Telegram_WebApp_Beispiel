@@ -167,12 +167,16 @@
     
     // Використовуємо myHand, переданий як аргумент
     elements.playerHand.innerHTML = '';
-    myHand.forEach(card => {
-        const div = document.createElement('div');
-        div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
-        div.textContent = card;
-        elements.playerHand.appendChild(div);
-    });
+            if (myHand && myHand.length > 0) {
+			alert("myHand.length: " + myHand.length);
+                myHand.forEach(card => {
+                    const div = document.createElement('div');
+                    div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
+                    div.textContent = card;
+                    elements.playerHand.appendChild(div);
+                });
+            } else alert("myHand.length: " + myHand.length);
+
     
     elements.collectedBoxes.innerHTML = '';
     state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
