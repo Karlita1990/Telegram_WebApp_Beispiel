@@ -1,332 +1,336 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <title>Гра "Скриньки"</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
-        .game-container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .card-container { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-        .card { width: 60px; height: 90px; border: 1px solid #ccc; border-radius: 5px; margin: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; background-color: white; }
-        .hearts, .diamonds { color: red; }
-        .clubs, .spades { color: black; }
-        .game-state-message { font-size: 1.2em; margin-bottom: 20px; }
-        #log { max-height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-top: 10px; text-align: left; background-color: #f9f9f9; }
-        #controls { margin-top: 20px; }
-        button, select, input { padding: 8px; margin: 5px; font-size: 1em; }
-        #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-        .collected-boxes { margin-top: 20px; text-align: left; }
-        /* Новий стиль для неактивної кнопки */
-        #startGameBtn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>Гра "Скриньки"</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
+        .game-container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .card-container { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .card { width: 60px; height: 90px; border: 1px solid #ccc; border-radius: 5px; margin: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; background-color: white; }
+        .hearts, .diamonds { color: red; }
+        .clubs, .spades { color: black; }
+        .game-state-message { font-size: 1.2em; margin-bottom: 20px; }
+        #log { max-height: 200px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-top: 10px; text-align: left; background-color: #f9f9f9; }
+        #controls { margin-top: 20px; }
+        button, select, input { padding: 8px; margin: 5px; font-size: 1em; }
+        #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+        .collected-boxes { margin-top: 20px; text-align: left; }
+        /* Новий стиль для неактивної кнопки */
+        #startGameBtn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>Гра "Скриньки"</h1>
+    <div class="game-container">
+        <h1>Гра "Скриньки"</h1>
 
-        <div id="lobby">
-            <p>Виберіть ім'я та кімнату для гри.</p>
-            <input type="text" id="player-name-input" placeholder="Ваше ім'я">
-            <input type="text" id="room-id-input" placeholder="ID кімнати">
-            <button onclick="joinRoom()">Приєднатися / Створити кімнату</button>
-            <p id="lobby-message"></p>
-        </div>
+        <div id="lobby">
+            <p>Виберіть ім'я та кімнату для гри.</p>
+            <input type="text" id="player-name-input" placeholder="Ваше ім'я">
+            <input type="text" id="room-id-input" placeholder="ID кімнати">
+            <button onclick="joinRoom()">Приєднатися / Створити кімнату</button>
+            <p id="lobby-message"></p>
+        </div>
 
-        <div id="game" style="display: none;">
-            <div class="game-state-message" id="game-status">Очікування на гравців...</div>
-            
-            <div id="controls">
-                <div id="game-actions" style="display: none;">
-                    <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
-                    <select id="target-player-select"></select>
-                    <select id="card-rank-select">
-                        <option value="">Вибрати значення</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="J">J</option>
-                        <option value="Q">Q</option>
-                        <option value="K">K</option>
-                        <option value="A">A</option>
-                    </select>
-                    <button onclick="askForCard()">Запитати</button>
-                </div>
-                
-                <div id="guess-count-form" style="display: none;">
-                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
-                    <input type="number" id="guess-count-input" min="1" max="4">
-                    <button onclick="guessCount()">Вгадати кількість</button>
-                </div>
-                
-                <div id="guess-suits-form" style="display: none;">
-                    <p>Скільки мастей ви вгадаєте?</p>
-                    <div id="suits-checkboxes">
-                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
-                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
-                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
-                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
-                    </div>
-                    <button onclick="guessSuits()">Вгадати масті</button>
-                </div>
+        <div id="game" style="display: none;">
+            <div class="game-state-message" id="game-status">Очікування на гравців...</div>
+            
+            <div id="controls">
+                <div id="game-actions" style="display: none;">
+                    <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
+                    <select id="target-player-select"></select>
+                    <select id="card-rank-select">
+                        <option value="">Вибрати значення</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="J">J</option>
+                        <option value="Q">Q</option>
+                        <option value="K">K</option>
+                        <option value="A">A</option>
+                    </select>
+                    <button onclick="askForCard()">Запитати</button>
+                </div>
+                
+                <div id="guess-count-form" style="display: none;">
+                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
+                    <input type="number" id="guess-count-input" min="1" max="4">
+                    <button onclick="guessCount()">Вгадати кількість</button>
+                </div>
+                
+                <div id="guess-suits-form" style="display: none;">
+                    <p>Скільки мастей ви вгадаєте?</p>
+                    <div id="suits-checkboxes">
+                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
+                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
+                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
+                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
+                    </div>
+                    <button onclick="guessSuits()">Вгадати масті</button>
+                </div>
 
-                <div id="response-buttons" style="display: none;">
-                    <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
-                    <button onclick="respondToAsk('yes')">Так</button>
-                    <button onclick="respondToAsk('no')">Ні</button>
-                </div>
-            </div>
+                <div id="response-buttons" style="display: none;">
+                    <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
+                    <button onclick="respondToAsk('yes')">Так</button>
+                    <button onclick="respondToAsk('no')">Ні</button>
+                </div>
+            </div>
 
-            <div id="game-info">
-                <button id="startGameBtn" onclick="startGame()" >Розпочати гру</button>
-                <p><strong>Ваші карти:</strong></p>
-                <div id="player-hand" class="card-container"></div>
-                <p><strong>Зібрані скриньки:</strong></p>
-                <div id="collected-boxes" class="collected-boxes"></div>
-                <p><strong>Колода:</strong> <span id="deck-size"></span> карт</p>
-                <p><strong>Гравці:</strong></p>
-                <ul id="players-list"></ul>
-            </div>
-        </div>
-        
-        <div class="message-box">
-            <h4>Журнал гри:</h4>
-            <div id="log"></div>
-        </div>
-    </div>
+            <div id="game-info">
+                <button id="startGameBtn" onclick="startGame()" >Розпочати гру</button>
+                <p><strong>Ваші карти:</strong></p>
+                <div id="player-hand" class="card-container"></div>
+                <p><strong>Зібрані скриньки:</strong></p>
+                <div id="collected-boxes" class="collected-boxes"></div>
+                <p><strong>Колода:</strong> <span id="deck-size"></span> карт</p>
+                <p><strong>Гравці:</strong></p>
+                <ul id="players-list"></ul>
+            </div>
+        </div>
+        
+        <div class="message-box">
+            <h4>Журнал гри:</h4>
+            <div id="log"></div>
+        </div>
+    </div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        const tg = window.Telegram.WebApp;
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // !!! Змініть на публічну адресу вашого сервера !!!
-        let socket;
-        let telegramUser = '';
-        let myName = '';
-        let myRoomId = '';
-        let myCards = [];
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const tg = window.Telegram.WebApp;
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // !!! Змініть на публічну адресу вашого сервера !!!
+        let socket;
+        let telegramUser = '';
+        let myName = '';
+        let myRoomId = '';
+        let myCards = [];
 
-        const elements = {
-            lobby: document.getElementById('lobby'),
-            game: document.getElementById('game'),
-            playerNameInput: document.getElementById('player-name-input'),
-            roomIdInput: document.getElementById('room-id-input'),
-            lobbyMessage: document.getElementById('lobby-message'),
-            gameStatus: document.getElementById('game-status'),
-            startGameBtn: document.getElementById('startGameBtn'),
-            gameActions: document.getElementById('game-actions'),
-            playerHand: document.getElementById('player-hand'),
-            collectedBoxes: document.getElementById('collected-boxes'),
-            playersList: document.getElementById('players-list'),
-            deckSize: document.getElementById('deck-size'),
-            log: document.getElementById('log'),
-            targetPlayerSelect: document.getElementById('target-player-select'),
-            cardRankSelect: document.getElementById('card-rank-select'),
-            guessCountForm: document.getElementById('guess-count-form'),
-            guessCountInput: document.getElementById('guess-count-input'),
-            guessSuitsForm: document.getElementById('guess-suits-form'),
-            suitsCheckboxes: document.getElementById('suits-checkboxes'),
-            responseButtons: document.getElementById('response-buttons'),
-            askingPlayerName: document.getElementById('asking-player-name'),
-            askedCardRank: document.getElementById('asked-card-rank'),
-            targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
-            cardRankGuess: document.getElementById('card-rank-guess')
-        };
+        const elements = {
+            lobby: document.getElementById('lobby'),
+            game: document.getElementById('game'),
+            playerNameInput: document.getElementById('player-name-input'),
+            roomIdInput: document.getElementById('room-id-input'),
+            lobbyMessage: document.getElementById('lobby-message'),
+            gameStatus: document.getElementById('game-status'),
+            startGameBtn: document.getElementById('startGameBtn'),
+            gameActions: document.getElementById('game-actions'),
+            playerHand: document.getElementById('player-hand'),
+            collectedBoxes: document.getElementById('collected-boxes'),
+            playersList: document.getElementById('players-list'),
+            deckSize: document.getElementById('deck-size'),
+            log: document.getElementById('log'),
+            targetPlayerSelect: document.getElementById('target-player-select'),
+            cardRankSelect: document.getElementById('card-rank-select'),
+            guessCountForm: document.getElementById('guess-count-form'),
+            guessCountInput: document.getElementById('guess-count-input'),
+            guessSuitsForm: document.getElementById('guess-suits-form'),
+            suitsCheckboxes: document.getElementById('suits-checkboxes'),
+            responseButtons: document.getElementById('response-buttons'),
+            askingPlayerName: document.getElementById('asking-player-name'),
+            askedCardRank: document.getElementById('asked-card-rank'),
+            targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
+            cardRankGuess: document.getElementById('card-rank-guess')
+        };
 
-        if (tg) {
-            tg.ready();
-            tg.expand();
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                const u = tg.initDataUnsafe.user;
-                telegramUser = u.username ? `@${u.username}` : (u.first_name || 'Гравець');
-                elements.playerNameInput.value = telegramUser;
-            } else {
-                telegramUser = "Анонімний гравець";
-            }
-        } else {
-            telegramUser = "Тестовий гравець";
-        }
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const u = tg.initDataUnsafe.user;
+                telegramUser = u.username ? `@${u.username}` : (u.first_name || 'Гравець');
+                elements.playerNameInput.value = telegramUser;
+            } else {
+                telegramUser = "Анонімний гравець";
+            }
+        } else {
+            telegramUser = "Тестовий гравець";
+        }
 
-        function logMessage(message) {
-            const p = document.createElement('p');
-            p.textContent = message;
-            elements.log.appendChild(p);
-            elements.log.scrollTop = elements.log.scrollHeight;
-        }
+        function logMessage(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            elements.log.appendChild(p);
+            elements.log.scrollTop = elements.log.scrollHeight;
+        }
 
-        function updateUI(state, myHand) {
-    elements.playersList.innerHTML = '';
-    state.players.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
-        elements.playersList.appendChild(li);
-    });
-    
-    // Використовуємо myHand, переданий як аргумент
-    elements.playerHand.innerHTML = '';
-            if (myHand && myHand.length > 0) {
-			    myHand.forEach(card => {
-                    const div = document.createElement('div');
-                    div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
-                    div.textContent = card;
-                    elements.playerHand.appendChild(div);
-                });
-            } 
+        function updateUI(state, myHand) {
+            elements.playersList.innerHTML = '';
+            state.players.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
+                elements.playersList.appendChild(li);
+            });
+    
+            // Використовуємо myHand, переданий як аргумент
+            elements.playerHand.innerHTML = '';
+            if (myHand && myHand.length > 0) {
+                myHand.forEach(card => {
+                    const div = document.createElement('div');
+                    div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
+                    div.textContent = card;
+                    elements.playerHand.appendChild(div);
+                });
+            } 
 
-    
-    elements.collectedBoxes.innerHTML = '';
-    state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
-        const p = document.createElement('p');
-        p.textContent = `Зібрано скриньку: ${rank}`;
-        elements.collectedBoxes.appendChild(p);
-    });
-    elements.deckSize.textContent = state.deck_size;
-    elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
-    
-    handleStartGameButton(state);
-    
-    hideAllControls();
-    if (state.current_turn === myName) {
-        elements.gameActions.style.display = 'block';
-        elements.targetPlayerSelect.innerHTML = state.players
-            .filter(p => p.name !== myName)
-            .map(p => `<option value="${p.name}">${p.name}</option>`)
-            .join('');
-    }
-}
+    
+            elements.collectedBoxes.innerHTML = '';
+            state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
+                const p = document.createElement('p');
+                p.textContent = `Зібрано скриньку: ${rank}`;
+                elements.collectedBoxes.appendChild(p);
+            });
+            elements.deckSize.textContent = state.deck_size;
+            elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
+    
+            handleStartGameButton(state);
+    
+            hideAllControls();
+            if (state.game_started && state.current_turn === myName) {
+                elements.gameActions.style.display = 'block';
+                elements.targetPlayerSelect.innerHTML = state.players
+                    .filter(p => p.name !== myName)
+                    .map(p => `<option value="${p.name}">${p.name}</option>`)
+                    .join('');
+            }
+        }
 
-        function handleStartGameButton(state) {
-            const isRoomAdmin = state.room_admin === myName;
-            
-            if (isRoomAdmin && !state.game_started) {
-                elements.startGameBtn.style.display = 'block';
-                elements.startGameBtn.disabled = state.players.length < 2;
-            } else {
-                elements.startGameBtn.style.display = 'none';
-            }
-        }
+        function handleStartGameButton(state) {
+            const isRoomAdmin = state.room_admin === myName;
+            
+            if (isRoomAdmin && !state.game_started) {
+                elements.startGameBtn.style.display = 'block';
+                elements.startGameBtn.disabled = state.players.length < 2;
+            } else {
+                elements.startGameBtn.style.display = 'none';
+            }
+        }
 
-        function hideAllControls() {
-            elements.gameActions.style.display = 'none';
-            elements.guessCountForm.style.display = 'none';
-            elements.guessSuitsForm.style.display = 'none';
-            elements.responseButtons.style.display = 'none';
-        }
+        function hideAllControls() {
+            elements.gameActions.style.display = 'none';
+            elements.guessCountForm.style.display = 'none';
+            elements.guessSuitsForm.style.display = 'none';
+            elements.responseButtons.style.display = 'none';
+        }
 
-        function joinRoom() {
-            myName = elements.playerNameInput.value.trim();
-            myRoomId = elements.roomIdInput.value.trim();
+        function joinRoom() {
+            myName = elements.playerNameInput.value.trim();
+            myRoomId = elements.roomIdInput.value.trim();
 
-            if (myName && myRoomId) {
-                connectWebSocket();
-            } else {
-                elements.lobbyMessage.textContent = 'Будь ласка, введіть ім\'я та ID кімнати.';
-            }
-        }
+            if (myName && myRoomId) {
+                connectWebSocket();
+            } else {
+                elements.lobbyMessage.textContent = 'Будь ласка, введіть ім\'я та ID кімнати.';
+            }
+        }
 
-        function connectWebSocket() {
-            socket = new WebSocket(WS_URL);
-            
-            socket.onopen = () => {
-                logMessage("Підключено до сервера. Надсилаємо ім'я гравця та ID кімнати...");
-                socket.send(JSON.stringify({ type: 'join', name: myName, room: myRoomId }));
-            };
-            
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                logMessage(`Отримано: ${event.data}`);
-                
-                switch (data.type) {
-                    case 'joined_room':
-                        elements.lobby.style.display = 'none';
-                        elements.game.style.display = 'block';
-                        logMessage(`Приєднано до кімнати: ${myRoomId}`);
-                        break;
-                    case 'update_state':
-                        updateUI(data.state, data.state.my_hand); // Передаємо my_hand як аргумент
-                        break;
-                    case 'start_game':
-                        logMessage('Гра розпочалась!');
-                        break;
-                    case 'game_over':
-                        logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
-                        break;
-                    case 'ask_response_needed':
-                        hideAllControls();
-                        elements.responseButtons.style.display = 'block';
-                        elements.askingPlayerName.textContent = data.asking_player;
-                        elements.askedCardRank.textContent = data.card_rank;
-                        break;
-                    case 'guess_count_needed':
-                        hideAllControls();
-                        elements.guessCountForm.style.display = 'block';
-                        elements.targetPlayerNameGuess.textContent = data.target_player;
-                        elements.cardRankGuess.textContent = data.card_rank;
-                        break;
-                    case 'guess_suits_needed':
-                        hideAllControls();
-                        elements.guessSuitsForm.style.display = 'block';
-                        break;
-                    case 'log':
-                        logMessage(data.message);
-                        break;
-                    case 'error':
-                        logMessage(`Помилка: ${data.message}`);
-                        break;
-                }
-            };
+        function connectWebSocket() {
+            socket = new WebSocket(WS_URL);
+            
+            socket.onopen = () => {
+                logMessage("Підключено до сервера. Надсилаємо ім'я гравця та ID кімнати...");
+                socket.send(JSON.stringify({ type: 'join', name: myName, room: myRoomId }));
+            };
+            
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                logMessage(`Отримано: ${event.data}`);
+                
+                switch (data.type) {
+                    case 'joined_room':
+                        elements.lobby.style.display = 'none';
+                        elements.game.style.display = 'block';
+                        logMessage(`Приєднано до кімнати: ${myRoomId}`);
+                        break;
+                    case 'update_state':
+                        updateUI(data.state, data.state.my_hand);
+                        break;
+                    case 'start_game':
+                        logMessage('Гра розпочалась!');
+                        break;
+                    case 'game_over':
+                        logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
+                        break;
+                    case 'ask_response_needed':
+                        hideAllControls();
+                        elements.responseButtons.style.display = 'block';
+                        elements.askingPlayerName.textContent = data.asking_player;
+                        elements.askedCardRank.textContent = data.card_rank;
+                        break;
+                    case 'guess_count_needed':
+                        hideAllControls();
+                        elements.guessCountForm.style.display = 'block';
+                        // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
+                        // elements.targetPlayerNameGuess.textContent = data.target_player;
+                        // elements.cardRankGuess.textContent = data.card_rank;
+                        break;
+                    case 'guess_suits_needed':
+                        hideAllControls();
+                        elements.guessSuitsForm.style.display = 'block';
+                        break;
+                    case 'log':
+                        logMessage(data.message);
+                        break;
+                    case 'error':
+                        logMessage(`Помилка: ${data.message}`);
+                        break;
+                }
+            };
 
-            socket.onclose = () => {
-                logMessage("Відключено від сервера. Спроба перепідключення через 5 секунд...");
-                setTimeout(connectWebSocket, 5000);
-            };
-            
-            socket.onerror = (error) => {
-                logMessage(`Помилка WebSocket: ${error}`);
-            };
-        }
+            socket.onclose = () => {
+                logMessage("Відключено від сервера. Спроба перепідключення через 5 секунд...");
+                setTimeout(connectWebSocket, 5000);
+            };
+            
+            socket.onerror = (error) => {
+                logMessage(`Помилка WebSocket: ${error}`);
+            };
+        }
 
-        function startGame() {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'start_game', room: myRoomId }));
-            }
-        }
+        function startGame() {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'start_game', room: myRoomId }));
+            }
+        }
 
-        function askForCard() {
-            const targetPlayer = elements.targetPlayerSelect.value;
-            const cardRank = elements.cardRankSelect.value;
-            if (targetPlayer && cardRank) {
-                socket.send(JSON.stringify({ type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank }));
-            } else {
-                logMessage('Будь ласка, виберіть гравця та значення карти.');
-            }
-        }
-        
-        function respondToAsk(response) {
-            socket.send(JSON.stringify({ type: 'ask_response', room: myRoomId, response: response }));
-            hideAllControls();
-        }
+        function askForCard() {
+            const targetPlayer = elements.targetPlayerSelect.value;
+            const cardRank = elements.cardRankSelect.value;
+            if (targetPlayer && cardRank) {
+                socket.send(JSON.stringify({ type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank }));
+            } else {
+                logMessage('Будь ласка, виберіть гравця та значення карти.');
+            }
+        }
+        
+        function respondToAsk(response) {
+            socket.send(JSON.stringify({ type: 'ask_response', room: myRoomId, response: response }));
+            hideAllControls();
+        }
 
-        function guessCount() {
-            const count = elements.guessCountInput.value;
-            if (count) {
-                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
-            } else {
-                logMessage('Будь ласка, введіть кількість.');
-            }
-        }
+        function guessCount() {
+            const count = elements.guessCountInput.value;
+            if (count) {
+                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
+            } else {
+                logMessage('Будь ласка, введіть кількість.');
+            }
+        }
 
-        function guessSuits() {
-            const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
-            if (suits.length > 0) {
-                socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
-            } else {
-                logMessage('Будь ласка, виберіть масті.');
-            }
-        }
-    </script>
+        function guessSuits() {
+            const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+            if (suits.length > 0) {
+                socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
+            } else {
+                logMessage('Будь ласка, виберіть масті.');
+            }
+        }
+    </script>
 </body>
 </html>
