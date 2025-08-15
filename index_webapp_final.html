@@ -60,23 +60,6 @@
                     <button onclick="askForCard()">Запитати</button>
                 </div>
                 
-                <div id="guess-count" style="display: none;">
-                    <p>Вгадайте, скільки карт з цим рангом у суперника?</p>
-                    <input type="number" id="guess-count-input" min="0" max="4">
-                    <button id="submit-guess-count-btn">Відправити</button>
-                </div>
-
-                <div id="guess-suits-form" style="display: none;">
-                    <p>Скільки мастей ви вгадаєте?</p>
-                    <div id="suits-checkboxes">
-                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
-                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
-                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
-                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
-                    </div>
-                    <button onclick="guessSuits()">Вгадати масті</button>
-                </div>
-
                 <div id="response-buttons" style="display: none;">
                     <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
                     <button onclick="respondToAsk('yes')">Так</button>
@@ -111,7 +94,6 @@
         let myName = '';
         let myRoomId = '';
         let myCards = [];
-        let lastAskedCardRank = null; // Змінна для зберігання рангу карти
 
         const elements = {
             lobby: document.getElementById('lobby'),
@@ -129,15 +111,9 @@
             log: document.getElementById('log'),
             targetPlayerSelect: document.getElementById('target-player-select'),
             cardRankSelect: document.getElementById('card-rank-select'),
-            guessCount: document.getElementById('guess-count'),
-            guessCountInput: document.getElementById('guess-count-input'),
-            submitGuessCountBtn: document.getElementById('submit-guess-count-btn'),             
-            suitsCheckboxes: document.getElementById('suits-checkboxes'),
             responseButtons: document.getElementById('response-buttons'),
             askingPlayerName: document.getElementById('asking-player-name'),
-            askedCardRank: document.getElementById('asked-card-rank'),
-            targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
-            cardRankGuess: document.getElementById('card-rank-guess')
+            askedCardRank: document.getElementById('asked-card-rank')
         };
 
         if (tg) {
@@ -191,20 +167,8 @@
             handleStartGameButton(state);
             
             hideAllControls();
-            //const myPlayerState = state.players.find(p => p.name === myName);
-            // --- ДОДАЙТЕ ЦІ РЯДКИ ---
-            const myPlayerState = state.players.find(p => p.name === myName);
-            console.log("Моє ім'я (myName):", myName);
-            console.log("Стан гравця (myPlayerState):", myPlayerState);
-            //alert ("Моє ім'я (myName):", myName);
-            //alert("Стан гравця (myPlayerState):", myPlayerState);
-            if (myPlayerState) {
-                console.log("Прапорець 'is_turn':", myPlayerState.is_turn);
-            }
-            // --- КІНЕЦЬ ДОДАНИХ РЯДКІВ ---
-
-            
-            if (state.game_started && myPlayerState && myPlayerState.is_turn) 
+            const myPlayerState = state.players.find(p => p.name === myName);  
+            if (state.game_started && myPlayerState && myPlayerState.is_turn)
             {
                 elements.gameActions.style.display = 'block';
                 elements.targetPlayerSelect.innerHTML = state.players
@@ -227,8 +191,6 @@
 
         function hideAllControls() {
             elements.gameActions.style.display = 'none';
-            elements.guessCount.style.display = 'none';
-            elements.guessSuitsForm.style.display = 'none';
             elements.responseButtons.style.display = 'none';
         }
 
@@ -264,9 +226,6 @@
                     case 'update_state':
                         updateUI(data.state, data.state.my_hand);
                         break;
-                    case 'start_game':
-                        logMessage('Гра розпочалась!');
-                        break;
                     case 'game_over':
                         logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
                         break;
@@ -275,16 +234,6 @@
                         elements.responseButtons.style.display = 'block';
                         elements.askingPlayerName.textContent = data.asking_player;
                         elements.askedCardRank.textContent = data.card_rank;
-                        lastAskedCardRank = data.card_rank; // Збереження рангу карти
-                        break;
-                    case 'guess_count_needed':
-                        hideAllControls();
-                        elements.guessCount.style.display = 'block';
-                        // Зауваження: ваш HTML не має полів для оновлення тексту, тому ми не можемо тут оновити `data.target_player` чи `data.card_rank`
-                        break;
-                    case 'guess_suits_needed':
-                        hideAllControls();
-                        elements.guessSuitsForm.style.display = 'block';
                         break;
                     case 'log':
                         logMessage(data.message);
@@ -325,26 +274,6 @@
             socket.send(JSON.stringify({ type: 'ask_response', room: myRoomId, response: response }));
             hideAllControls();
         }
-
-        function guessSuits() {
-            const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
-            if (suits.length > 0) {
-                socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
-            } else {
-                logMessage('Будь ласка, виберіть масті.');
-            }
-        }
-
-        elements.submitGuessCountBtn.onclick = () => {
-            const count = parseInt(elements.guessCountInput.value, 10);
-            if (!isNaN(count) && lastAskedCardRank !== null) {
-                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count, card_rank: lastAskedCardRank }));
-                elements.guessCount.style.display = 'none';
-            } else {
-                logMessage('Будь ласка, введіть число і переконайтеся, що ранг карти визначено.');
-            }
-        };
-            
     </script>
 </body>
 </html>
