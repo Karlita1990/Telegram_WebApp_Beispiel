@@ -191,7 +191,9 @@
             handleStartGameButton(state);
             
             hideAllControls();
-            if (state.game_started && state.current_turn === myName) {
+            const myPlayerState = state.players.find(p => p.name === myName);
+            if (state.game_started && myPlayerState && myPlayerState.is_turn) 
+            {
                 elements.gameActions.style.display = 'block';
                 elements.targetPlayerSelect.innerHTML = state.players
                     .filter(p => p.name !== myName)
