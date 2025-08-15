@@ -14,7 +14,7 @@ class Deck:
     def __init__(self):
         ranks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
         suits = ['♥', '♦', '♣', '♠']
-        self.cards = [f"{rank}{suit}" for rank in ranks for rank in suits]
+        self.cards = [f"{rank}{suit}" for rank in ranks for suit in suits]
         random.shuffle(self.cards)
 
     def draw(self, count=1):
