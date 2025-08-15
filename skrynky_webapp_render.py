@@ -81,7 +81,7 @@ class Game:
     
     async def deal_initial_cards(self):
         num_players = len(self.players)
-        cards_to_deal = 5 if num_players <= 3 else 4
+        cards_to_deal = 4 #5 if num_players <= 3 else 4
         
         for _ in range(cards_to_deal):
             for player_name in self.players:
