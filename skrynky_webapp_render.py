@@ -165,34 +165,38 @@ class Game:
         target_cards_to_transfer = [card for card in target_player.hand if card[:-1] == self.asked_rank]
         
         if response == 'yes':
-            if target_cards_to_transfer:
-                await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
-                for card in target_cards_to_transfer:
-                    target_player.hand.remove(card)
-                    asking_player.hand.append(card)
+            #if target_cards_to_transfer:
+            await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
+                #for card in target_cards_to_transfer:
+                #    target_player.hand.remove(card)
+                #    asking_player.hand.append(card)
                 
-                await self.notify_all(f"Гравець {asking_player.name} отримує карти.")
+                #await self.notify_all(f"Гравець {asking_player.name} отримує карти.")
                 
-                if self.check_for_sets(asking_player):
-                    await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
+                #if self.check_for_sets(asking_player):
+                #    await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
                 
                 # Якщо у гравця, що відповів, не залишилось карт, він бере нову з колоди
-                await self.check_and_deal_if_needed(target_player_name)
+                #await self.check_and_deal_if_needed(target_player_name)
                 
-                await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
+                #await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
 
-            else:
-                 await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
-                 await self.draw_card_and_check_sets(asking_player, self.asked_rank)
-        
+            #else:
+            #     await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
+            #     await self.draw_card_and_check_sets(asking_player, self.asked_rank)
+            await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт.")
+            await self.players.get(self.asking_player).websocket.send(json.dumps({
+                'type': 'guess_count_needed',
+                'target_player': target_player_name
+            }))
         else:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
-            await self.draw_card_and_check_sets(asking_player, self.asked_rank)
+            await self.draw_card_and_check_sets(asking_player)#, self.asked_rank)
         
         await self.check_end_game()
         await self.notify_all_state()
 
-    async def draw_card_and_check_sets(self, player, asked_rank):
+    async def draw_card_and_check_sets(self, player): #, asked_rank):
         if not self.deck.is_empty():
             new_card = self.deck.draw()[0]
             player.hand.append(new_card)
@@ -202,9 +206,9 @@ class Game:
             if self.check_for_sets(player):
                 await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
             
-            if new_card[:-1] == asked_rank:
-                await self.notify_all(f"Гравець {player.name} витягнув карту '{new_card}', яку він запитував, і продовжує свій хід.")
-            else:
+            #if new_card[:-1] == asked_rank:
+            #    await self.notify_all(f"Гравець {player.name} витягнув карту '{new_card}', яку він запитував, і продовжує свій хід.")
+            #else:
                 await self.next_turn()
 
     async def handle_guess_count(self, guessing_player_name, count):
