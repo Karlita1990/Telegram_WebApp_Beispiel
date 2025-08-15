@@ -197,10 +197,6 @@ class Game:
             
             if self.check_for_sets(player):
                 await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
-            
-            if new_card[:-1] == self.asked_rank:
-                await self.notify_all(f"Гравець {player.name} витягнув карту '{new_card}', яку він запитував, і продовжує свій хід.")
-            else:
                 await self.next_turn()
 
     def get_state(self):
