@@ -174,6 +174,7 @@ class Game:
                     await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
                 
                 await self.check_and_deal_if_needed(target_player_name)
+                await self.check_and_deal_if_needed(asking_player.name)
                 
                 await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
 
@@ -213,8 +214,11 @@ class Game:
     async def notify_all_state(self):
         state = self.get_state()
         for player in self.players.values():
-            player_state = {**state, 'my_hand': player.hand}
-            await player.websocket.send(json.dumps({'type': 'update_state', 'state': player_state}))
+            try:
+                player_state = {**state, 'my_hand': player.hand}
+                await player.websocket.send(json.dumps({'type': 'update_state', 'state': player_state}))
+            except websockets.exceptions.ConnectionClosedError:
+                logger.warning(f"Failed to send state update to {player.name}, connection closed.")
 
     async def notify_all(self, message):
         for player in self.players.values():
