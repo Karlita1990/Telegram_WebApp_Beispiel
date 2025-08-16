@@ -197,7 +197,8 @@ class Game:
             
             if self.check_for_sets(player):
                 await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
-                await self.next_turn()
+                
+            await self.next_turn()
 
     def get_state(self):
         player_list = [{'name': p.name, 'is_turn': p.name == self.asking_player, 'collected_boxes': len(p.collected_sets), 'collected_sets': p.collected_sets} for p in self.players.values()]
