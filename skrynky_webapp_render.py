@@ -162,7 +162,7 @@ class Game:
         target_cards_to_transfer = [card for card in target_player.hand if card[:-1] == self.asked_rank]
         
         if response == 'yes':
-                if target_cards_to_transfer:
+            if target_cards_to_transfer:
                 await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
                 for card in target_cards_to_transfer:
                     target_player.hand.remove(card)
@@ -178,8 +178,8 @@ class Game:
                 await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
 
             else:
-                 await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
-                 await self.draw_card_and_check_sets(asking_player)
+                await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
+                await self.draw_card_and_check_sets(asking_player)
         
         else:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
@@ -197,6 +197,10 @@ class Game:
             
             if self.check_for_sets(player):
                 await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
+            
+            if new_card[:-1] == self.asked_rank:
+                await self.notify_all(f"Гравець {player.name} витягнув карту '{new_card}', яку він запитував, і продовжує свій хід.")
+            else:
                 await self.next_turn()
 
     def get_state(self):
@@ -259,13 +263,6 @@ async def handler(websocket):
                 
                 elif data['type'] == 'ask_response' and player_name == game.target_player:
                     await game.handle_ask_response(player_name, data['response'])
-                
-                # Логіка вгадування кількості та мастей була видалена
-                # elif data['type'] == 'guess_count' and player_name == game.asking_player:
-                #     await game.handle_guess_count(player_name, data['count'])
-                
-                # elif data['type'] == 'guess_suits' and player_name == game.asking_player:
-                #     await game.handle_guess_suits(player_name, data['suits'])
 
     except websockets.exceptions.ConnectionClosedError:
         logger.info(f"З'єднання закрито для гравця {player_name} в кімнаті {room_id}")
