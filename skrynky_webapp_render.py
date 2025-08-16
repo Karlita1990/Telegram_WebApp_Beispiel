@@ -162,7 +162,7 @@ class Game:
         target_cards_to_transfer = [card for card in target_player.hand if card[:-1] == self.asked_rank]
         
         if response == 'yes':
-            if target_cards_to_transfer:
+                if target_cards_to_transfer:
                 await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
                 for card in target_cards_to_transfer:
                     target_player.hand.remove(card)
