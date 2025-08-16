@@ -174,14 +174,17 @@ class Game:
                     await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
                 
                 await self.check_and_deal_if_needed(target_player_name)
-                await self.check_and_deal_if_needed(asking_player.name)
                 
-                await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
-
+                if not asking_player.hand and self.deck.is_empty():
+                    await self.notify_all("У гравця немає карт для продовження ходу. Хід переходить до наступного гравця.")
+                    await self.next_turn()
+                else:
+                    await self.check_and_deal_if_needed(asking_player.name)
+                    await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
             else:
                 await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
                 await self.draw_card_and_check_sets(asking_player)
-        
+                
         else:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
             await self.draw_card_and_check_sets(asking_player)
@@ -199,7 +202,7 @@ class Game:
             if self.check_for_sets(player):
                 await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
                 
-            await self.next_turn()
+        await self.next_turn()
 
     def get_state(self):
         player_list = [{'name': p.name, 'is_turn': p.name == self.asking_player, 'collected_boxes': len(p.collected_sets), 'collected_sets': p.collected_sets} for p in self.players.values()]
