@@ -196,7 +196,7 @@ class Game:
             await self.notify_all(f"Гравець {player.name} бере карту з колоди.")
             
             if self.check_for_sets(player):
-                await self.notify_all(f"Гравець {player.name} зібрав скриньку!"
+                await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
                 await self.next_turn()
 
     def get_state(self):
