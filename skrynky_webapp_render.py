@@ -196,11 +196,7 @@ class Game:
             await self.notify_all(f"Гравець {player.name} бере карту з колоди.")
             
             if self.check_for_sets(player):
-                await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
-            
-            if new_card[:-1] == self.asked_rank:
-                await self.notify_all(f"Гравець {player.name} витягнув карту '{new_card}', яку він запитував, і продовжує свій хід.")
-            else:
+                await self.notify_all(f"Гравець {player.name} зібрав скриньку!"
                 await self.next_turn()
 
     def get_state(self):
@@ -221,7 +217,10 @@ class Game:
 
     async def notify_all(self, message):
         for player in self.players.values():
-            await player.websocket.send(json.dumps({'type': 'log', 'message': message}))
+            try:
+                await player.websocket.send(json.dumps({'type': 'log', 'message': message}))
+            except websockets.exceptions.ConnectionClosedError:
+                logger.warning(f"Failed to send log message to {player.name}, connection closed.")
 
 game_rooms = {}
 
