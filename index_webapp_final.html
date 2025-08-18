@@ -60,28 +60,23 @@
                     <button onclick="askForCard()">Запитати</button>
                 </div>
 
-               <!-- 1 версія, додано для перевірки вгадування кількості карт -->
-               <div id="guess-count-form" style="display: none;">
-                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
-                    <input type="number" id="guess-count-input" min="1" max="4">
-                    <button onclick="guessCount()">Вгадати кількість</button>
-                </div>
-                <!-- кінець версії 1 -->
-
-
-                <!-- додаток до версії 1, вгадування масті -->
+                <div id="guess-count-form" style="display: none;">
+                    <p>Гравець <span id="target-player-name-guess"></span> має карти рангу <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
+                    <input type="number" id="guess-count-input" min="1" max="4">
+                    <button onclick="guessCount()">Вгадати кількість</button>
+                </div>
+            
                 <div id="guess-suits-form" style="display: none;">
-                    <p>Скільки мастей ви вгадаєте?</p>
-                    <div id="suits-checkboxes">
-                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
-                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
-                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
-                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
-                    </div>
-                    <button onclick="guessSuits()">Вгадати масті</button>
-                </div>
-                <!-- кінець додатку до версії 1, стосовно вгадування масті -->
-                
+                    <p>Скільки мастей ви вгадаєте?</p>
+                    <p>Вгадування мастей для рангу <span id="guessed-rank-suits"></span></p>
+                    <div id="suits-checkboxes">
+                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
+                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
+                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
+                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
+                    </div>
+                    <button onclick="guessSuits()">Вгадати масті</button>
+                </div>
                 
                 <div id="response-buttons" style="display: none;">
                     <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
@@ -111,7 +106,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // !!! Змініть на публічну адресу вашого сервера !!!
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com";
         let socket;
         let telegramUser = '';
         let myName = '';
@@ -136,7 +131,13 @@
             cardRankSelect: document.getElementById('card-rank-select'),
             responseButtons: document.getElementById('response-buttons'),
             askingPlayerName: document.getElementById('asking-player-name'),
-            askedCardRank: document.getElementById('asked-card-rank')
+            askedCardRank: document.getElementById('asked-card-rank'),
+            guessCountForm: document.getElementById('guess-count-form'),
+            guessSuitsForm: document.getElementById('guess-suits-form'),
+            targetPlayerNameGuess: document.getElementById('target-player-name-guess'),
+            cardRankGuess: document.getElementById('card-rank-guess'),
+            guessedRankSuits: document.getElementById('guessed-rank-suits'),
+            suitsCheckboxes: document.getElementById('suits-checkboxes'),
         };
 
         if (tg) {
@@ -172,7 +173,9 @@
             if (myHand && myHand.length > 0) {
                 myHand.forEach(card => {
                     const div = document.createElement('div');
-                    div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
+                    const rank = card.slice(0, -1);
+                    const suit = card.slice(-1);
+                    div.className = `card ${suit === '♥' || suit === '♦' ? 'hearts' : 'clubs'}`;
                     div.textContent = card;
                     elements.playerHand.appendChild(div);
                 });
@@ -190,7 +193,7 @@
             handleStartGameButton(state);
             
             hideAllControls();
-            const myPlayerState = state.players.find(p => p.name === myName);  
+            const myPlayerState = state.players.find(p => p.name === myName);
             if (state.game_started && myPlayerState && myPlayerState.is_turn)
             {
                 elements.gameActions.style.display = 'block';
@@ -215,6 +218,8 @@
         function hideAllControls() {
             elements.gameActions.style.display = 'none';
             elements.responseButtons.style.display = 'none';
+            elements.guessCountForm.style.display = 'none';
+            elements.guessSuitsForm.style.display = 'none';
         }
 
         function joinRoom() {
@@ -258,6 +263,26 @@
                         elements.askingPlayerName.textContent = data.asking_player;
                         elements.askedCardRank.textContent = data.card_rank;
                         break;
+                    case 'guess_count_needed':
+                        hideAllControls();
+                        elements.guessCountForm.style.display = 'block';
+                        elements.targetPlayerNameGuess.textContent = data.target_player;
+                        elements.cardRankGuess.textContent = data.card_rank;
+                        break;
+                    case 'guess_suits_needed':
+                        hideAllControls();
+                        elements.guessSuitsForm.style.display = 'block';
+                        elements.guessedRankSuits.textContent = data.card_rank;
+                        const suitsCheckboxes = elements.suitsCheckboxes.querySelectorAll('input');
+                        suitsCheckboxes.forEach((checkbox, index) => {
+                            if (index < data.count) {
+                                checkbox.parentElement.style.display = 'inline';
+                            } else {
+                                checkbox.parentElement.style.display = 'none';
+                            }
+                            checkbox.checked = false; // Reset checkboxes
+                        });
+                        break;
                     case 'log':
                         logMessage(data.message);
                         break;
@@ -296,6 +321,22 @@
         function respondToAsk(response) {
             socket.send(JSON.stringify({ type: 'ask_response', room: myRoomId, response: response }));
             hideAllControls();
+        }
+
+        function guessCount() {
+            const count = elements.guessCountInput.value;
+            if (count) {
+                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
+                hideAllControls();
+            }
+        }
+        
+        function guessSuits() {
+            const checkedSuits = Array.from(elements.suitsCheckboxes.querySelectorAll('input[name="suit"]:checked')).map(cb => cb.value);
+            if (checkedSuits.length > 0) {
+                socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: checkedSuits }));
+                hideAllControls();
+            }
         }
     </script>
 </body>
