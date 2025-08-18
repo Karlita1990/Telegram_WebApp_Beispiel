@@ -59,6 +59,29 @@
                     </select>
                     <button onclick="askForCard()">Запитати</button>
                 </div>
+
+               <!-- 1 версія, додано для перевірки вгадування кількості карт -->
+               <div id="guess-count-form" style="display: none;">
+                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
+                    <input type="number" id="guess-count-input" min="1" max="4">
+                    <button onclick="guessCount()">Вгадати кількість</button>
+                </div>
+                <!-- кінець версії 1 -->
+
+
+                <!-- додаток до версії 1, вгадування масті -->
+                <div id="guess-suits-form" style="display: none;">
+                    <p>Скільки мастей ви вгадаєте?</p>
+                    <div id="suits-checkboxes">
+                        <label><input type="checkbox" name="suit" value="♥"> ♥</label>
+                        <label><input type="checkbox" name="suit" value="♦"> ♦</label>
+                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
+                        <label><input type="checkbox" name="suit" value="♠"> ♠</label>
+                    </div>
+                    <button onclick="guessSuits()">Вгадати масті</button>
+                </div>
+                <!-- кінець додатку до версії 1, стосовно вгадування масті -->
+                
                 
                 <div id="response-buttons" style="display: none;">
                     <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
