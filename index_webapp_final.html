@@ -34,15 +34,10 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Гра "Скриньки" - 3</h1>
+        <h1>Гра "Скриньки" ßß 2-6</h1>
 
         <div id="lobby-view" class="lobby">
             <h2>Ласкаво просимо!</h2>
-            <p>Введіть ваше ім'я та приєднайтесь до гри.</p>
-            <input type="text" id="player-name-input" placeholder="Ваше ім'я" required><br><br>
-            <input type="text" id="room-id-input" placeholder="ID кімнати (необов'язково)">
-            <button id="join-btn">Приєднатися</button>
-            <br>
             <p id="room-info" style="margin-top: 10px;"></p>
         </div>
 
@@ -97,6 +92,7 @@
                 <div id="game-history"></div>
             </div>
         </div>
+        <button id="close-game-btn" style="margin-top: 20px;">Закрити гру</button>
     </div>
     
     <div id="game-over-modal" class="game-over-modal">
@@ -110,7 +106,10 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        const ws = new WebSocket("ws://localhost:8765");
+        // Змінна для зберігання WebSocket-з'єднання
+        let ws;
+
+        // Змінні стану гри
         let playerName = '';
         let roomID = null;
         let gameState = null;
@@ -119,12 +118,10 @@
         let currentStep = 'ask_rank';
         let turnState = {};
 
+        // Об'єкт для доступу до елементів DOM
         const elements = {
             lobbyView: document.getElementById('lobby-view'),
             gameView: document.getElementById('game-view'),
-            playerNameInput: document.getElementById('player-name-input'),
-            roomIdInput: document.getElementById('room-id-input'),
-            joinBtn: document.getElementById('join-btn'),
             roomInfo: document.getElementById('room-info'),
             playersUl: document.getElementById('players-ul'),
             playerCount: document.getElementById('player-count'),
@@ -145,78 +142,100 @@
             gameOverModal: document.getElementById('game-over-modal'),
             gameResult: document.getElementById('game-result'),
             playAgainBtn: document.getElementById('play-again-btn'),
-            closeModal: document.querySelector('.close')
+            closeModal: document.querySelector('.close'),
+            closeGameBtn: document.getElementById('close-game-btn')
         };
+        
+        // Функція ініціалізації Web App
+        function initWebApp() {
+            // Отримуємо дані з Telegram
+            const tg = window.Telegram.WebApp;
+            if (tg) {
+                // Включаємо візуальні налаштування Telegram Web App
+                tg.ready();
+                
+                // Отримуємо ім'я гравця з Telegram
+                playerName = tg.initDataUnsafe.user.first_name || tg.initDataUnsafe.user.username || 'Anonymous';
+                
+                // Отримуємо room_id з посилання, якщо він є
+                const urlParams = new URLSearchParams(window.location.search);
+                roomID = urlParams.get('room_id');
 
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            console.log("Received:", data);
-
-            switch (data.type) {
-                case 'room_created':
-                    roomID = data.room_id;
-                    elements.roomInfo.textContent = `Кімнату створено. ID: ${roomID}. Очікування гравців...`;
-                    break;
-                case 'room_state':
-                    updateLobbyView(data);
-                    break;
-                case 'game_started':
-                case 'state_update': // Після успішного ходу гравця сервер повертає state_update
-                    gameState = data.state;
-                    playerHand = data.hand;
-                    
-                    if (data.is_current_player) {
-                       currentPlayer = playerName;
-                       currentStep = 'ask_rank';
-                       turnState = {};
-                    } else {
-                        currentPlayer = data.state.currentPlayer;
-                    }
-
-                    updateUI();
-                    break;
-                case 'next_step':
-                    currentStep = data.step;
-                    turnState = { opponent: data.opponent, rank: data.rank, count: data.count };
-                    playerHand = data.hand;
-                    updateUI();
-                    break;
-                case 'game_over':
-                    gameState = data.state;
-                    showGameOverModal(data.state, data.winners);
-                    break;
-                case 'info':
-                    addLogEntry(data.message, 'system');
-                    break;
-                case 'error':
-                    addLogEntry(`Помилка: ${data.message}`, 'error');
-                    break;
+                // Встановлюємо WebSocket-з'єднання
+                connectWebSocket();
+            } else {
+                console.error("Telegram WebApp not available.");
+                // Fallback for testing outside of Telegram
+                playerName = 'TestPlayer';
+                connectWebSocket();
             }
-        };
+        }
+        
+        function connectWebSocket() {
+            // Підключення до сервера
+            ws = new WebSocket("wss://telegram-webapp-beispiel.onrender.com";);
 
-        ws.onopen = function() {
-            console.log("Connected to WebSocket server.");
-        };
-
-        ws.onclose = function() {
-            addLogEntry("З'єднання з сервером втрачено.", 'error');
-        };
-
-        elements.joinBtn.addEventListener('click', () => {
-            playerName = elements.playerNameInput.value.trim();
-            roomID = elements.roomIdInput.value.trim();
-
-            if (playerName) {
+            ws.onopen = function() {
+                console.log("Connected to WebSocket server.");
+                // Автоматичне приєднання до гри
                 const joinMessage = {
                     action: "join",
                     name: playerName,
-                    room_id: roomID || null
+                    room_id: roomID ? parseInt(roomID) : null
                 };
                 ws.send(JSON.stringify(joinMessage));
                 elements.lobbyView.style.display = 'none';
                 elements.gameView.style.display = 'block';
-            }
-        });
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log("Received:", data);
+
+                switch (data.type) {
+                    case 'room_created':
+                        roomID = data.room_id;
+                        elements.roomInfo.textContent = `Кімнату створено. ID: ${roomID}. Поділіться цим ID, щоб запросити друзів: ${window.location.href.split('?')[0]}?room_id=${roomID}`;
+                        break;
+                    case 'room_state':
+                        updateLobbyView(data);
+                        break;
+                    case 'game_started':
+                    case 'state_update':
+                        gameState = data.state;
+                        playerHand = data.hand;
+                        currentPlayer = data.state.currentPlayer;
+                        
+                        if (playerName === currentPlayer) {
+                            currentStep = 'ask_rank';
+                            turnState = {};
+                        }
+
+                        updateUI();
+                        break;
+                    case 'next_step':
+                        currentStep = data.step;
+                        turnState = { opponent: data.opponent, rank: data.rank, count: data.count };
+                        playerHand = data.hand;
+                        updateUI();
+                        break;
+                    case 'game_over':
+                        gameState = data.state;
+                        showGameOverModal(data.state, data.winner);
+                        break;
+                    case 'info':
+                        addLogEntry(data.message, 'system');
+                        break;
+                    case 'error':
+                        addLogEntry(`Помилка: ${data.message}`, 'error');
+                        break;
+                }
+            };
+
+            ws.onclose = function() {
+                addLogEntry("З'єднання з сервером втрачено.", 'error');
+            };
+        }
 
         elements.startGameBtn.addEventListener('click', () => {
             const startMessage = { action: "start_game" };
@@ -278,6 +297,14 @@
             elements.gameOverModal.style.display = 'none';
         });
 
+        elements.closeGameBtn.addEventListener('click', () => {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.close();
+            } else {
+                window.close();
+            }
+        });
+        
         function updateLobbyView(data) {
             elements.playersUl.innerHTML = '';
             elements.playerCount.textContent = data.players.length;
@@ -304,7 +331,7 @@
             updatePlayerHands();
             updatePlayerInfo();
             updateHistory();
-            updateControls(); // <--- ЦЕЙ ВИКЛИК БУЛО ДОДАНО
+            updateControls();
         }
 
         function updatePlayerHands() {
@@ -389,7 +416,6 @@
             
             const allRanks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
             const availableRanks = allRanks.filter(rank => {
-                // Перевіряємо, чи номінал вже зібраний будь-яким гравцем
                 return !Object.values(gameState.collectedBoxes).some(boxes => boxes.includes(rank));
             });
 
@@ -412,8 +438,8 @@
         function updateSubmitButtonState() {
             elements.submitRequestBtn.disabled = selectedSuits.size !== turnState.count;
         }
-
-		function showGameOverModal(state, winners) { 
+		  
+		function showGameOverModal(state, winner) {
             const modal = document.getElementById("game-over-modal");
             const gameResultDiv = document.getElementById("game-result");
 
@@ -429,8 +455,8 @@
             const totalPlayers = state.players.length;
 
             // Додаємо емодзі 🏆 біля переможців
-            const winnersWithTrophy = winners.map(name => `🏆 ${name}`);
-
+            const winnersWithTrophy = [winner].map(name => `🏆 ${name}`);
+            
             // Масиви варіантів повідомлень
             const singleWinnerMsgs = [
                 `Переможець: ${winnersWithTrophy[0]}!`,
@@ -438,38 +464,22 @@
                 `Беззаперечний лідер: ${winnersWithTrophy[0]}!`
             ];
 
-            const fullTieMsgs = [
-                `Нічия! Всі грали добре і рівні між собою: ${winnersWithTrophy.join(', ')}!`,
-                `Повна рівність! ${winnersWithTrophy.join(', ')} поділили перше місце!`,
-                `Жодного явного лідера — усі переможці: ${winnersWithTrophy.join(', ')}!`
-            ];
-
-            const partialTieMsgs = [
-                `Перемогу розділяють: ${winnersWithTrophy.join(', ')}!`,
-                `Лідери цього раунду: ${winnersWithTrophy.join(', ')}!`,
-                `Декілька гравців вийшли на вершину: ${winnersWithTrophy.join(', ')}!`
-            ];
-
             const noWinnerMsgs = [
                 `Переможця не визначено!`,
                 `Ніхто не здобув перемоги цього разу.`,
                 `Цього разу гра закінчилась без лідера.`
             ];
-
+            
             // Функція для вибору випадкового повідомлення
             function randomMsg(arr) {
                 return arr[Math.floor(Math.random() * arr.length)];
             }
-
+            
             // Логіка вибору повідомлення
-            if (!winners || winners.length === 0) {
+            if (!winner) {
                 resultHTML += `<h3>${randomMsg(noWinnerMsgs)}</h3>`;
-            } else if (winners.length === 1) {
-                resultHTML += `<h3>${randomMsg(singleWinnerMsgs)}</h3>`;
-            } else if (winners.length === totalPlayers && totalPlayers === 3) {
-                resultHTML += `<h3>${randomMsg(fullTieMsgs)}</h3>`;
             } else {
-                resultHTML += `<h3>${randomMsg(partialTieMsgs)}</h3>`;
+                resultHTML += `<h3>${randomMsg(singleWinnerMsgs)}</h3>`;
             }
 
                 gameResultDiv.innerHTML = resultHTML;
@@ -485,9 +495,7 @@
         }
 
         window.onload = function() {
-            if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
-                console.warn("WebSocket client must be served over HTTP or HTTPS.");
-            }
+            initWebApp();
         };
 
     </script>
