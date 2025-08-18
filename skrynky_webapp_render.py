@@ -111,11 +111,12 @@ class Game:
         return False
 
     async def check_and_deal_if_needed(self, player_name):
+        """Перевіряє, чи порожня рука гравця, і якщо так, видає йому карту з колоди."""
         player = self.players.get(player_name)
         if player and not player.hand and not self.deck.is_empty():
             new_card = self.deck.draw()[0]
             player.hand.append(new_card)
-            await self.notify_all(f"У гравця {player_name} порожня рука. Автоматично взято карту з колоди.")
+            await self.notify_all(f"У гравця {player.name} порожня рука. Автоматично взято карту з колоди.")
             return True
         return False
 
@@ -164,33 +165,15 @@ class Game:
         if response == 'yes':
             if target_cards_to_transfer:
                 await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
-                #for card in target_cards_to_transfer:
-                 #   target_player.hand.remove(card)
-                  #  asking_player.hand.append(card)
-                
-                #await self.notify_all(f"Гравець {asking_player.name} отримує карти.")
-                
-                #if self.check_for_sets(asking_player):
-                 #   await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
-                
-                #await self.check_and_deal_if_needed(target_player_name)
-                
-                #if not asking_player.hand and self.deck.is_empty():
-                 #   await self.notify_all("У гравця немає карт для продовження ходу. Хід переходить до наступного гравця.")
-                  #  await self.next_turn()
-                #else:
-                 #   await self.check_and_deal_if_needed(asking_player.name)
-                  #  await self.notify_all(f"Гравець {asking_player.name} продовжує свій хід.")
-            #else:
-             #   await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
-              #  await self.draw_card_and_check_sets(asking_player)
-
-            # новий код перевірки, вгадування кількості карт
-            await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт.")
-            await self.players.get(self.asking_player).websocket.send(json.dumps({
-                'type': 'guess_count_needed',
-                'target_player': target_player_name
-            }))    
+                await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт.")
+                await self.players.get(self.asking_player).websocket.send(json.dumps({
+                    'type': 'guess_count_needed',
+                    'target_player': target_player_name
+                }))
+            else:
+                 await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
+                 await self.draw_card_and_check_sets(asking_player)
+        
         else:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
             await self.draw_card_and_check_sets(asking_player)
@@ -198,14 +181,25 @@ class Game:
         await self.check_end_game()
         await self.notify_all_state()
 
-    # новий код вгадування кількості карт та масті:
+    async def draw_card_and_check_sets(self, player):
+        if not self.deck.is_empty():
+            new_card = self.deck.draw()[0]
+            player.hand.append(new_card)
+            
+            await self.notify_all(f"Гравець {player.name} бере карту з колоди.")
+            
+            if self.check_for_sets(player):
+                await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
+        
+        await self.next_turn()
+
     async def handle_guess_count(self, guessing_player_name, count):
         asking_player = self.players.get(guessing_player_name)
         target_player = self.players.get(self.target_player)
         
         correct_count = sum(1 for card in target_player.hand if card[:-1] == self.asked_rank)
         
-        if int (count) == correct_count:
+        if int(count) == correct_count:
             await asking_player.websocket.send(json.dumps({
                 'type': 'guess_suits_needed',
                 'card_rank': self.asked_rank,
@@ -214,7 +208,7 @@ class Game:
             await self.notify_all(f"Гравець {asking_player.name} вгадав кількість карт: {count}. Він продовжує вгадувати масті.")
         else:
             await self.notify_all(f"Гравець {asking_player.name} не вгадав кількість. Він бере карту з колоди.")
-            await self.draw_card_and_check_sets(asking_player)#, self.asked_rank)
+            await self.draw_card_and_check_sets(asking_player)
 
         await self.check_end_game()
         await self.notify_all_state()
@@ -238,10 +232,8 @@ class Game:
             if self.check_for_sets(asking_player):
                  await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку!")
             
-            
-            # Якщо у гравця, що відповів, не залишилось карт, він бере нову з колоди
             await self.check_and_deal_if_needed(target_player.name)
-            
+
             if not asking_player.hand and self.deck.is_empty():
                  await self.notify_all("У гравця немає карт для продовження ходу. Хід переходить до наступного гравця.")
                  await self.next_turn()
@@ -255,17 +247,6 @@ class Game:
         await self.check_end_game()
         await self.notify_all_state()
 
-    async def draw_card_and_check_sets(self, player):
-        if not self.deck.is_empty():
-            new_card = self.deck.draw()[0]
-            player.hand.append(new_card)
-            
-            await self.notify_all(f"Гравець {player.name} бере карту з колоди.")
-            
-            if self.check_for_sets(player):
-                await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
-                
-        await self.next_turn()
 
     def get_state(self):
         player_list = [{'name': p.name, 'is_turn': p.name == self.asking_player, 'collected_boxes': len(p.collected_sets), 'collected_sets': p.collected_sets} for p in self.players.values()]
@@ -333,11 +314,11 @@ async def handler(websocket):
                 
                 elif data['type'] == 'ask_response' and player_name == game.target_player:
                     await game.handle_ask_response(player_name, data['response'])
-                    
-                elif data['type'] == 'guess_count' and player_name == game.asking_player: # додано для визначення кількості
+                
+                elif data['type'] == 'guess_count' and player_name == game.asking_player:
                     await game.handle_guess_count(player_name, data['count'])
                 
-                elif data['type'] == 'guess_suits' and player_name == game.asking_player: # додано для визначення масті
+                elif data['type'] == 'guess_suits' and player_name == game.asking_player:
                     await game.handle_guess_suits(player_name, data['suits'])
 
     except websockets.exceptions.ConnectionClosedError:
