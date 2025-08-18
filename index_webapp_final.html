@@ -34,7 +34,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Гра "Скриньки" ßß 2-6</h1>
+        <h1>Гра "Скриньки"</h1>
 
         <div id="lobby-view" class="lobby">
             <h2>Ласкаво просимо!</h2>
@@ -146,38 +146,31 @@
             closeGameBtn: document.getElementById('close-game-btn')
         };
         
-        // Функція ініціалізації Web App
         function initWebApp() {
-            // Отримуємо дані з Telegram
             const tg = window.Telegram.WebApp;
             if (tg) {
-                // Включаємо візуальні налаштування Telegram Web App
                 tg.ready();
-                
-                // Отримуємо ім'я гравця з Telegram
                 playerName = tg.initDataUnsafe.user.first_name || tg.initDataUnsafe.user.username || 'Anonymous';
                 
-                // Отримуємо room_id з посилання, якщо він є
                 const urlParams = new URLSearchParams(window.location.search);
                 roomID = urlParams.get('room_id');
 
-                // Встановлюємо WebSocket-з'єднання
                 connectWebSocket();
             } else {
-                console.error("Telegram WebApp not available.");
-                // Fallback for testing outside of Telegram
+                console.error("Telegram WebApp not available. Using fallback.");
+                // Fallback для тестування без Telegram
                 playerName = 'TestPlayer';
                 connectWebSocket();
             }
         }
         
         function connectWebSocket() {
-            // Підключення до сервера
-            ws = new WebSocket("wss://telegram-webapp-beispiel.onrender.com";);
+            // !!! ВАЖЛИВО: Замініть 'ws://localhost:8765' на реальний URL вашого сервера
+            // (наприклад, 'wss://your-app-name.onrender.com' для Render)
+            ws = new WebSocket("wss://telegram-webapp-beispiel.onrender.com");
 
             ws.onopen = function() {
                 console.log("Connected to WebSocket server.");
-                // Автоматичне приєднання до гри
                 const joinMessage = {
                     action: "join",
                     name: playerName,
@@ -221,7 +214,7 @@
                         break;
                     case 'game_over':
                         gameState = data.state;
-                        showGameOverModal(data.state, data.winner);
+                        showGameOverModal(data.state, data.winner); // Оновлено
                         break;
                     case 'info':
                         addLogEntry(data.message, 'system');
@@ -444,24 +437,17 @@
             const gameResultDiv = document.getElementById("game-result");
 
             let resultHTML = "<h3>Результати:</h3>";
-
-            // Підсумки по кожному гравцю
             for (const player of state.players) {
             const boxes = state.boxes[player];
             const collected = state.collectedBoxes[player].join(', ');
                 resultHTML += `<p>${player}: ${boxes} скриньок (${collected})</p>`;
             }
-
-            const totalPlayers = state.players.length;
-
-            // Додаємо емодзі 🏆 біля переможців
-            const winnersWithTrophy = [winner].map(name => `🏆 ${name}`);
             
-            // Масиви варіантів повідомлень
+            const totalPlayers = state.players.length;
             const singleWinnerMsgs = [
-                `Переможець: ${winnersWithTrophy[0]}!`,
-                `Чемпіон цього раунду — ${winnersWithTrophy[0]}!`,
-                `Беззаперечний лідер: ${winnersWithTrophy[0]}!`
+                `Переможець: 🏆 ${winner}!`,
+                `Чемпіон цього раунду — 🏆 ${winner}!`,
+                `Беззаперечний лідер: 🏆 ${winner}!`
             ];
 
             const noWinnerMsgs = [
@@ -470,12 +456,10 @@
                 `Цього разу гра закінчилась без лідера.`
             ];
             
-            // Функція для вибору випадкового повідомлення
             function randomMsg(arr) {
                 return arr[Math.floor(Math.random() * arr.length)];
             }
             
-            // Логіка вибору повідомлення
             if (!winner) {
                 resultHTML += `<h3>${randomMsg(noWinnerMsgs)}</h3>`;
             } else {
