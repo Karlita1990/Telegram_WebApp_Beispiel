@@ -8,7 +8,6 @@ import logging
 # Налаштування логування
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
 class SkrynkyGame:
     def __init__(self, players):
         self.players = players
@@ -27,7 +26,7 @@ class SkrynkyGame:
     def _generateDeck(self, size=36):
         ranks = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'][:size // 4]
         suits = ['♥', '♦', '♣', '♠']
-        deck = [f"{rank}{suit}" for rank in ranks for rank in suits]
+        deck = [f"{rank}{suit}" for rank in ranks for suit in suits]
         random.shuffle(deck)
         return deck
 
@@ -103,11 +102,7 @@ class SkrynkyGame:
     
     def get_winner(self):
         if not self.boxes: return None
-        max_boxes = max(self.boxes.values())
-        if max_boxes == 0:
-            return None
-        winners = [player for player, count in self.boxes.items() if count == max_boxes]
-        return winners
+        return max(self.boxes, key=self.boxes.get)
 
     def getCurrentPlayer(self):
         return self.players[self.currentPlayerIdx]
