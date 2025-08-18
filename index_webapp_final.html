@@ -16,7 +16,6 @@
         button, select, input { padding: 8px; margin: 5px; font-size: 1em; }
         #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
         .collected-boxes { margin-top: 20px; text-align: left; }
-        /* Новий стиль для неактивної кнопки */
         #startGameBtn:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
@@ -31,7 +30,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Гра "Скриньки" для 2-6 гравців</h1>
+        <h1>Гра "Скриньки"</h1>
 
         <div id="lobby">
             <p>Виберіть ім'я та кімнату для гри.</p>
@@ -46,7 +45,7 @@
             
             <div id="controls">
                 <div id="game-actions" class="control-form">
-                    <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
+                    <p>Ваш хід! Виберіть гравця та карту для запиту.</p>
                     <select id="target-player-select"></select>
                     <select id="card-rank-select">
                         <option value="">Вибрати значення</option>
@@ -109,7 +108,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com";
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // Замініть на адресу вашого сервера
         let socket;
         let telegramUser = '';
         let myName = '';
@@ -172,7 +171,6 @@
                 elements.playersList.appendChild(li);
             });
             
-            // Виправлення: Оновлення списку гравців у спадному меню
             elements.targetPlayerSelect.innerHTML = '<option value="">Вибрати гравця</option>';
             state.players.forEach(p => {
                 if (p.name !== myName) {
@@ -206,15 +204,14 @@
             
             handleStartGameButton(state);
             
-            // Виправлення: Централізована логіка відображення
-            if (state.game_started && state.players.find(p => p.name === myName)?.is_turn) {
+            const myPlayerState = state.players.find(p => p.name === myName);
+            if (state.game_started && myPlayerState && myPlayerState.is_turn) {
                 updateControls('game-actions');
             } else {
                 updateControls(null);
             }
         }
         
-        // Нова універсальна функція для керування видимостю форм
         function updateControls(activeFormId) {
             const forms = document.querySelectorAll('.control-form');
             forms.forEach(form => {
@@ -285,13 +282,8 @@
                         updateControls('guess-suits-form');
                         elements.guessedRankSuits.textContent = data.card_rank;
                         const suitsCheckboxes = elements.suitsCheckboxes.querySelectorAll('input');
-                        suitsCheckboxes.forEach((checkbox, index) => {
-                            if (index < data.count) {
-                                checkbox.parentElement.style.display = 'inline';
-                            } else {
-                                checkbox.parentElement.style.display = 'none';
-                            }
-                            checkbox.checked = false; // Reset checkboxes
+                        suitsCheckboxes.forEach(checkbox => {
+                            checkbox.checked = false;
                         });
                         break;
                     case 'log':
@@ -336,7 +328,7 @@
         function guessCount() {
             const count = elements.guessCountInput.value;
             if (count) {
-                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
+                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
             }
         }
         
