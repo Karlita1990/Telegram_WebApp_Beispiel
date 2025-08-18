@@ -258,16 +258,20 @@
                         logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
                         break;
                     case 'ask_response_needed':
+                        alert ("1. ask_response_needed funktioniert!");
                         hideAllControls();
                         elements.responseButtons.style.display = 'block';
                         elements.askingPlayerName.textContent = data.asking_player;
                         elements.askedCardRank.textContent = data.card_rank;
+                        alert ("2. ask_response_needed funktioniert!");
                         break;
                     case 'guess_count_needed':
+                        alert ("2.1 guess_count_needed funktioniert!");
                         hideAllControls();
                         elements.guessCountForm.style.display = 'block';
                         elements.targetPlayerNameGuess.textContent = data.target_player;
                         elements.cardRankGuess.textContent = data.card_rank;
+                        alert ("2.2 guess_count_needed funktioniert!");
                         break;
                     case 'guess_suits_needed':
                         hideAllControls();
