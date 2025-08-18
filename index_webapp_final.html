@@ -42,7 +42,7 @@
             <div class="game-state-message" id="game-status">Очікування на гравців...</div>
             
             <div id="controls">
-                <div id="game-actions" style="display: none;">
+                <div id="game-actions" class="control-form" style="display: none;">
                     <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
                     <select id="target-player-select"></select>
                     <select id="card-rank-select">
@@ -60,13 +60,13 @@
                     <button onclick="askForCard()">Запитати</button>
                 </div>
 
-                <div id="guess-count-form" style="display: none;">
+                <div id="guess-count-form" class="control-form" style="display: none;">
                     <p>Гравець <span id="target-player-name-guess"></span> має карти рангу <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
                     <input type="number" id="guess-count-input" min="1" max="4">
                     <button onclick="guessCount()">Вгадати кількість</button>
                 </div>
             
-                <div id="guess-suits-form" style="display: none;">
+                <div id="guess-suits-form" class="control-form" style="display: none;">
                     <p>Скільки мастей ви вгадаєте?</p>
                     <p>Вгадування мастей для рангу <span id="guessed-rank-suits"></span></p>
                     <div id="suits-checkboxes">
@@ -78,7 +78,7 @@
                     <button onclick="guessSuits()">Вгадати масті</button>
                 </div>
                 
-                <div id="response-buttons" style="display: none;">
+                <div id="response-buttons" class="control-form" style="display: none;">
                     <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
                     <button onclick="respondToAsk('yes')">Так</button>
                     <button onclick="respondToAsk('no')">Ні</button>
@@ -192,17 +192,19 @@
             
             handleStartGameButton(state);
             
-            hideAllControls();
-            const myPlayerState = state.players.find(p => p.name === myName);
-            if (state.game_started && myPlayerState && myPlayerState.is_turn)
-            {
-                elements.gameActions.style.display = 'block';
-                elements.targetPlayerSelect.innerHTML = state.players
-                    .filter(p => p.name !== myName)
-                    .map(p => `<option value="${p.name}">${p.name}</option>`)
-                    .join('');
+            updateControls(state.game_started ? (state.players.find(p => p.name === myName)?.is_turn ? 'game-actions' : null) : null);
+        }
+        
+        function updateControls(activeFormId) {
+            const forms = document.querySelectorAll('.control-form');
+            forms.forEach(form => {
+                form.style.display = 'none';
+            });
+            if (activeFormId) {
+                document.getElementById(activeFormId).style.display = 'block';
             }
         }
+
 
         function handleStartGameButton(state) {
             const isRoomAdmin = state.room_admin === myName;
@@ -215,12 +217,6 @@
             }
         }
 
-        function hideAllControls() {
-            elements.gameActions.style.display = 'none';
-            elements.responseButtons.style.display = 'none';
-            elements.guessCountForm.style.display = 'none';
-            elements.guessSuitsForm.style.display = 'none';
-        }
 
         function joinRoom() {
             myName = elements.playerNameInput.value.trim();
@@ -258,24 +254,17 @@
                         logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
                         break;
                     case 'ask_response_needed':
-                        alert ("1. ask_response_needed funktioniert!");
-                        hideAllControls();
-                        elements.responseButtons.style.display = 'block';
+                        updateControls('response-buttons');
                         elements.askingPlayerName.textContent = data.asking_player;
                         elements.askedCardRank.textContent = data.card_rank;
-                        alert ("2. ask_response_needed funktioniert!");
                         break;
                     case 'guess_count_needed':
-                        alert ("2.1 guess_count_needed funktioniert!");
-                        hideAllControls();
-                        elements.guessCountForm.style.display = 'block';
+                        updateControls('guess-count-form');
                         elements.targetPlayerNameGuess.textContent = data.target_player;
                         elements.cardRankGuess.textContent = data.card_rank;
-                        alert ("2.2 guess_count_needed funktioniert!");
                         break;
                     case 'guess_suits_needed':
-                        hideAllControls();
-                        elements.guessSuitsForm.style.display = 'block';
+                        updateControls('guess-suits-form');
                         elements.guessedRankSuits.textContent = data.card_rank;
                         const suitsCheckboxes = elements.suitsCheckboxes.querySelectorAll('input');
                         suitsCheckboxes.forEach((checkbox, index) => {
@@ -324,14 +313,12 @@
         
         function respondToAsk(response) {
             socket.send(JSON.stringify({ type: 'ask_response', room: myRoomId, response: response }));
-            hideAllControls();
         }
 
         function guessCount() {
             const count = elements.guessCountInput.value;
             if (count) {
                 socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
-                hideAllControls();
             }
         }
         
@@ -339,7 +326,6 @@
             const checkedSuits = Array.from(elements.suitsCheckboxes.querySelectorAll('input[name="suit"]:checked')).map(cb => cb.value);
             if (checkedSuits.length > 0) {
                 socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: checkedSuits }));
-                hideAllControls();
             }
         }
     </script>
