@@ -24,6 +24,7 @@
         .hidden {
             display: none !important;
         }
+        .control-form { display: none; }
     </style>
 </head>
 <body>
@@ -42,7 +43,7 @@
             <div class="game-state-message" id="game-status">Очікування на гравців...</div>
             
             <div id="controls">
-                <div id="game-actions" class="control-form" style="display: none;">
+                <div id="game-actions" class="control-form">
                     <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
                     <select id="target-player-select"></select>
                     <select id="card-rank-select">
@@ -57,16 +58,16 @@
                         <option value="K">K</option>
                         <option value="A">A</option>
                     </select>
-                    <button onclick="askForCard()">Запитати</button>
+                    <button onclick="askForCard()">Запитати навність значення</button>
                 </div>
 
-                <div id="guess-count-form" class="control-form" style="display: none;">
+                <div id="guess-count-form" class="control-form">
                     <p>Гравець <span id="target-player-name-guess"></span> має карти рангу <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
                     <input type="number" id="guess-count-input" min="1" max="4">
                     <button onclick="guessCount()">Вгадати кількість</button>
                 </div>
             
-                <div id="guess-suits-form" class="control-form" style="display: none;">
+                <div id="guess-suits-form" class="control-form">
                     <p>Скільки мастей ви вгадаєте?</p>
                     <p>Вгадування мастей для рангу <span id="guessed-rank-suits"></span></p>
                     <div id="suits-checkboxes">
@@ -78,7 +79,7 @@
                     <button onclick="guessSuits()">Вгадати масті</button>
                 </div>
                 
-                <div id="response-buttons" class="control-form" style="display: none;">
+                <div id="response-buttons" class="control-form">
                     <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
                     <button onclick="respondToAsk('yes')">Так</button>
                     <button onclick="respondToAsk('no')">Ні</button>
@@ -169,7 +170,7 @@
                 elements.playersList.appendChild(li);
             });
             
-            // Виправлено: Оновлення списку гравців у спадному меню
+            // Оновлення списку гравців у спадному меню
             elements.targetPlayerSelect.innerHTML = '<option value="">Вибрати гравця</option>';
             state.players.forEach(p => {
                 if (p.name !== myName) {
@@ -203,7 +204,11 @@
             
             handleStartGameButton(state);
             
-            updateControls(state.game_started ? (state.players.find(p => p.name === myName)?.is_turn ? 'game-actions' : null) : null);
+            if (state.game_started && state.players.find(p => p.name === myName)?.is_turn) {
+                updateControls('game-actions');
+            } else {
+                updateControls(null);
+            }
         }
         
         function updateControls(activeFormId) {
@@ -216,7 +221,6 @@
             }
         }
 
-
         function handleStartGameButton(state) {
             const isRoomAdmin = state.room_admin === myName;
             
@@ -227,7 +231,6 @@
                 elements.startGameBtn.style.display = 'none';
             }
         }
-
 
         function joinRoom() {
             myName = elements.playerNameInput.value.trim();
