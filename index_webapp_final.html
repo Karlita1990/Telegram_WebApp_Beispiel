@@ -169,6 +169,17 @@
                 elements.playersList.appendChild(li);
             });
             
+            // Виправлено: Оновлення списку гравців у спадному меню
+            elements.targetPlayerSelect.innerHTML = '<option value="">Вибрати гравця</option>';
+            state.players.forEach(p => {
+                if (p.name !== myName) {
+                    const option = document.createElement('option');
+                    option.value = p.name;
+                    option.textContent = p.name;
+                    elements.targetPlayerSelect.appendChild(option);
+                }
+            });
+
             elements.playerHand.innerHTML = '';
             if (myHand && myHand.length > 0) {
                 myHand.forEach(card => {
