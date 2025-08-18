@@ -24,12 +24,14 @@
         .hidden {
             display: none !important;
         }
-        .control-form { display: none; }
+        .control-form {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Гра "Скриньки"</h1>
+        <h1>Гра "Скриньки" для 2-6 гравців</h1>
 
         <div id="lobby">
             <p>Виберіть ім'я та кімнату для гри.</p>
@@ -58,7 +60,7 @@
                         <option value="K">K</option>
                         <option value="A">A</option>
                     </select>
-                    <button onclick="askForCard()">Запитати навність значення</button>
+                    <button onclick="askForCard()">Запитати</button>
                 </div>
 
                 <div id="guess-count-form" class="control-form">
@@ -170,7 +172,7 @@
                 elements.playersList.appendChild(li);
             });
             
-            // Оновлення списку гравців у спадному меню
+            // Виправлення: Оновлення списку гравців у спадному меню
             elements.targetPlayerSelect.innerHTML = '<option value="">Вибрати гравця</option>';
             state.players.forEach(p => {
                 if (p.name !== myName) {
@@ -204,6 +206,7 @@
             
             handleStartGameButton(state);
             
+            // Виправлення: Централізована логіка відображення
             if (state.game_started && state.players.find(p => p.name === myName)?.is_turn) {
                 updateControls('game-actions');
             } else {
@@ -211,6 +214,7 @@
             }
         }
         
+        // Нова універсальна функція для керування видимостю форм
         function updateControls(activeFormId) {
             const forms = document.querySelectorAll('.control-form');
             forms.forEach(form => {
