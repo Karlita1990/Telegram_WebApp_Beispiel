@@ -30,7 +30,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Гра "Скриньки"</h1>
+        <h1>Гра "Скриньки" 2-6</h1>
 
         <div id="lobby">
             <p>Виберіть ім'я та кімнату для гри.</p>
@@ -108,7 +108,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com"; // Замініть на адресу вашого сервера
+        const WS_URL = "wss://telegram-webapp-beispiel.onrender.com";
         let socket;
         let telegramUser = '';
         let myName = '';
@@ -204,12 +204,6 @@
             
             handleStartGameButton(state);
             
-            const myPlayerState = state.players.find(p => p.name === myName);
-            if (state.game_started && myPlayerState && myPlayerState.is_turn) {
-                updateControls('game-actions');
-            } else {
-                updateControls(null);
-            }
         }
         
         function updateControls(activeFormId) {
@@ -264,6 +258,13 @@
                         break;
                     case 'update_state':
                         updateUI(data.state, data.state.my_hand);
+                        
+                        const myPlayerState = data.state.players.find(p => p.name === myName);
+                        if (data.state.game_started && myPlayerState && myPlayerState.is_turn) {
+                            updateControls('game-actions');
+                        } else {
+                            updateControls(null);
+                        }
                         break;
                     case 'game_over':
                         logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
