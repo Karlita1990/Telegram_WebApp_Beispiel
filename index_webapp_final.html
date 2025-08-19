@@ -237,7 +237,7 @@
         function hideAllControls() {
             elements.gameActions.style.display = 'none';
             //elements.guessCount.style.display = 'none';
-            elements.guessSuitsForm.style.display = 'none';
+            //elements.guessSuitsForm.style.display = 'none';
             elements.responseButtons.style.display = 'none';
         }
 
@@ -350,6 +350,7 @@
             const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
             if (suits.length > 0) {
                 socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
+                elements.guessSuitsForm.style.display = 'none';
             } else {
                 logMessage('Будь ласка, виберіть масті.');
             }
