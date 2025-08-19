@@ -281,7 +281,7 @@
                         break;
                     case 'guess_count_needed':
                         //hideAllControls();
-                        elements.guessCountForm.style.display = 'block';
+                        elements.guessCount.style.display = 'block';
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
                         elements.targetPlayerNameGuess.textContent = data.target_player;
                         elements.cardRankGuess.textContent = data.card_rank;
@@ -352,11 +352,17 @@
 // Додайте обробник подій для нової кнопки
     elements.submitGuessCountBtn.onclick = () => {
         alert("dies funktioniert!!!");
-        const count = parseInt(elements.guessCountInput.value, 10);
-        if (!isNaN(count)) {
-            socket.send(JSON.stringify({ type: 'guess_count', count: count }));
-            elements.guessCount.style.display = 'none';
-        }
+        //const count = parseInt(elements.guessCountInput.value, 10);
+       // if (!isNaN(count)) {
+        //    socket.send(JSON.stringify({ type: 'guess_count', count: count }));
+        //    elements.guessCount.style.display = 'none';
+     //   }
+          const count = elements.guessCountInput.value;
+            if (count) {
+                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
+            } else {
+                logMessage('Будь ласка, введіть кількість.');
+            }
     };
 
 
