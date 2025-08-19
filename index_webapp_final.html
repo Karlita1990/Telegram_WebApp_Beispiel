@@ -127,7 +127,7 @@
         let myRoomId = '';
         let myCards = [];
 
-        let waitingForGuess = false;   // щоб пригальмувати оновлення стану при вгадуванні кількості карт
+        //let waitingForGuess = false;   // щоб пригальмувати оновлення стану при вгадуванні кількості карт
 
         const elements = {
             lobby: document.getElementById('lobby'),
@@ -267,9 +267,9 @@
                 logMessage(`Отримано: ${event.data}`);
 
                 // Якщо ми чекаємо на вгадування, ігноруємо оновлення стану
-                if (data.type === 'update_state' && waitingForGuess) {
-                   return;
-                }
+                //if (data.type === 'update_state' && waitingForGuess) {
+                  // return;
+                //}
                 
                 switch (data.type) {
                     case 'joined_room':
@@ -304,7 +304,7 @@
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
                         //elements.targetPlayerNameGuess.textContent = data.target_player;
                         //elements.cardRankGuess.textContent = data.card_rank;
-                        waitingForGuess = true; // ВСТАНОВЛЮЄМО ЦЕЙ ПРАПОРЕЦЬ
+                        //waitingForGuess = true; // ВСТАНОВЛЮЄМО ЦЕЙ ПРАПОРЕЦЬ
                         break;
                     case 'guess_suits_needed':
                         hideAllControls();
