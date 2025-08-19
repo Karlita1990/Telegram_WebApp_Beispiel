@@ -257,8 +257,12 @@
             
             socket.onopen = () => {
                 logMessage("Підключено до сервера. Надсилаємо ім'я гравця та ID кімнати...");
-                socket.send(JSON.stringify({ type: 'join', name: myName, room: myRoomId }));
-            };
+                //socket.send(JSON.stringify({ type: 'join', name: myName, room: myRoomId }));
+                // Новий, виправлений код:
+                   const message_to_send = { type: 'join', name: myName, room: myRoomId };
+                   addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+                   socket.send(JSON.stringify(message_to_send));
+                   };
             
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
@@ -317,7 +321,12 @@
 
         function startGame() {
             if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'start_game', room: myRoomId }));
+                //socket.send(JSON.stringify({ type: 'start_game', room: myRoomId }));
+                  const message_to_send = { type: 'start_game', room: myRoomId };
+                // Логуємо повідомлення перед відправкою
+                addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+                 // Відправляємо повідомлення
+                socket.send(JSON.stringify(message_to_send));
             }
         }
 
@@ -325,7 +334,12 @@
             const targetPlayer = elements.targetPlayerSelect.value;
             const cardRank = elements.cardRankSelect.value;
             if (targetPlayer && cardRank) {
-                socket.send(JSON.stringify({ type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank }));
+                //socket.send(JSON.stringify({ type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank }));
+                  const message_to_send = {type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank };
+                // Логуємо повідомлення перед відправкою
+                  addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+               // Відправляємо повідомлення
+                  socket.send(JSON.stringify(message_to_send)); 
             } else {
                 logMessage('Будь ласка, виберіть гравця та значення карти.');
             }
@@ -349,7 +363,12 @@
         function guessSuits() {
             const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
             if (suits.length > 0) {
-                socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
+                //socket.send(JSON.stringify({ type: 'guess_suits', room: myRoomId, suits: suits }));
+                const message_to_send = { type: 'guess_suits', room: myRoomId, suits: suits };
+                // Логуємо повідомлення перед відправкою
+                addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+               // Відправляємо повідомлення
+                socket.send(JSON.stringify(message_to_send));
                 elements.guessSuitsForm.style.display = 'none';
             } else {
                 logMessage('Будь ласка, виберіть масті.');
@@ -361,7 +380,11 @@
       const count = parseInt(elements.guessCountInput.value, 10);
 
       if (!isNaN(count)) {
-          socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
+          const message_to_send = { type: 'guess_count', room: myRoomId, count: count };
+          // Логуємо повідомлення перед відправкою
+          addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');    
+          // Відправляємо повідомлення
+          socket.send(JSON.stringify(message_to_send));
           elements.guessCount.style.display = 'none'; // ховаємо форму після відправки
       } else {
           logMessage('Будь ласка, виберіть кількість.');
