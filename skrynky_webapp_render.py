@@ -166,7 +166,7 @@ class Game:
         
         if response == 'yes':
             if target_cards_to_transfer:
-            await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
+                await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
                 #for card in target_cards_to_transfer:
                 #    target_player.hand.remove(card)
                 #    asking_player.hand.append(card)
@@ -184,12 +184,12 @@ class Game:
             #else:
             #     await self.notify_all(f"Гравець {target_player.name} помилився, у нього немає запитаної карти.")
             #     await self.draw_card_and_check_sets(asking_player, self.asked_rank)
-            await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт.")
-            await self.players.get(self.asking_player).websocket.send(json.dumps({
-                'type': 'guess_count_needed',
-                'target_player': target_player_name,
-                'card_rank': self.asked_rank
-            }))
+                await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт.")
+                await self.players.get(self.asking_player).websocket.send(json.dumps({
+                    'type': 'guess_count_needed',
+                    'target_player': target_player_name,
+                    'card_rank': self.asked_rank
+                }))
         
         else:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
