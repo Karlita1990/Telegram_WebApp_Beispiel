@@ -238,7 +238,7 @@
 
         function hideAllControls() {
             elements.gameActions.style.display = 'none';
-            elements.guessCountForm.style.display = 'none';
+            //elements.guessCountForm.style.display = 'none';
             elements.guessSuitsForm.style.display = 'none';
             elements.responseButtons.style.display = 'none';
         }
@@ -302,8 +302,8 @@
                         //hideAllControls();
                         elements.guessCount.style.display = 'block';
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
-                        elements.targetPlayerNameGuess.textContent = data.target_player;
-                        elements.cardRankGuess.textContent = data.card_rank;
+                        //elements.targetPlayerNameGuess.textContent = data.target_player;
+                        //elements.cardRankGuess.textContent = data.card_rank;
                         waitingForGuess = true; // ВСТАНОВЛЮЄМО ЦЕЙ ПРАПОРЕЦЬ
                         break;
                     case 'guess_suits_needed':
@@ -350,15 +350,15 @@
             hideAllControls();
         }
 
-        function guessCount() {
-            alert("guesCount funktioniert!!!!!!!!!!!!!!!!");
-            const count = elements.guessCountInput.value;
-            if (count) {
-                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
-            } else {
-                logMessage('Будь ласка, введіть кількість.');
-            }
-        }
+        //function guessCount() {
+         //   alert("guesCount funktioniert!!!!!!!!!!!!!!!!");
+        //    const count = elements.guessCountInput.value;
+        //    if (count) {
+        //        socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
+        //    } else {
+        //        logMessage('Будь ласка, введіть кількість.');
+        //    }
+      //  }
 
         function guessSuits() {
             const suits = Array.from(elements.suitsCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
