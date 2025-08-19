@@ -252,6 +252,14 @@
             }
         }
 
+        function addLogEntry(message, type) {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}-log`;
+            logEntry.textContent = message;
+            elements.log.appendChild(logEntry);  // <--- ВИПРАВЛЕНО ТУТ
+            elements.log.scrollTop = elements.log.scrollHeight; // <--- ВИПРАВЛЕНО ТУТ
+        }
+
         function connectWebSocket() {
             socket = new WebSocket(WS_URL);
             
