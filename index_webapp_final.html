@@ -69,7 +69,8 @@
 
 
                 <div id="guess-count" style="display: none;">
-                    <p>Вгадайте, скільки карт з цим рангом є у суперника?</p>
+                    <p>Вгадайте, скільки карт з цим рангом є у вашого суперника?</p>
+                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
                     <input type="number" id="guess-count-input" min="1" max="4">
                     <button id="submit-guess-count-btn">Відправити</button>
                 </div>
@@ -138,9 +139,9 @@
             targetPlayerSelect: document.getElementById('target-player-select'),
             cardRankSelect: document.getElementById('card-rank-select'),
                 
-            guessCountForm: document.getElementById('guess-count-form'),
-            guessCountInput: document.getElementById('guess-count-input'),
-            guessSuitsForm: document.getElementById('guess-suits-form'),
+            //guessCountForm: document.getElementById('guess-count-form'),
+            //guessCountInput: document.getElementById('guess-count-input'),
+            //guessSuitsForm: document.getElementById('guess-suits-form'),
 
             guessCount: document.getElementById('guess-count'),
             guessCountInput: document.getElementById('guess-count-input'),
@@ -350,6 +351,7 @@
 
 // Додайте обробник подій для нової кнопки
     elements.submitGuessCountBtn.onclick = () => {
+        alert("dies funktioniert!!!");
         const count = parseInt(elements.guessCountInput.value, 10);
         if (!isNaN(count)) {
             socket.send(JSON.stringify({ type: 'guess_count', count: count }));
