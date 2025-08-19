@@ -61,7 +61,7 @@
                 </div>
                 
                 <div id="guess-count-form" style="display: none;">
-                    <!-- Це коментар <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>   Це коментар -->
+                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
                     <input type="number" id="guess-count-input" min="1" max="4">
                     <button onclick="guessCount()">Вгадати кількість</button>
                 </div>
@@ -143,7 +143,7 @@
             guessSuitsForm: document.getElementById('guess-suits-form'),
 
             guessCount: document.getElementById('guess-count'),
-            guessCountInput: document.getElementById('guess-count-input'),
+            //guessCountInput: document.getElementById('guess-count-input'),
             submitGuessCountBtn: document.getElementById('submit-guess-count-btn'),
                 
             suitsCheckboxes: document.getElementById('suits-checkboxes'),
@@ -281,10 +281,10 @@
                         break;
                     case 'guess_count_needed':
                         //hideAllControls();
-                        elements.guessCount.style.display = 'block';
+                        elements.guessCountForm.style.display = 'block';
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
-                        //elements.targetPlayerNameGuess.textContent = data.target_player;
-                        //elements.cardRankGuess.textContent = data.card_rank;
+                        elements.targetPlayerNameGuess.textContent = data.target_player;
+                        elements.cardRankGuess.textContent = data.card_rank;
                         break;
                     case 'guess_suits_needed':
                         hideAllControls();
