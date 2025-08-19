@@ -71,12 +71,12 @@
                 <div id="guess-count" style="display: none;">
                     <p>Вгадайте, скільки карт з цим рангом є у вашого суперника?</p>
                 <!--      <input type="number" id="guess-count-input" min="1" max="4">   Це коментар --> 
-                    <select id="card-count-select">
-                        <option value="">Вибрати значення</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
+                       <select id="card-count-select">  
+                           <option value="">Вибрати значення</option>  
+                           <option value="1">1</option>  
+                           <option value="2">2</option>  
+                           <option value="3">3</option>   
+                       </select>   
                     <button id="submit-guess-count-btn">Відправити</button>
                 </div>
 
@@ -127,8 +127,6 @@
         let myRoomId = '';
         let myCards = [];
 
-        //let waitingForGuess = false;   // щоб пригальмувати оновлення стану при вгадуванні кількості карт
-
         const elements = {
             lobby: document.getElementById('lobby'),
             game: document.getElementById('game'),
@@ -151,7 +149,7 @@
             guessSuitsForm: document.getElementById('guess-suits-form'),
 
             guessCount: document.getElementById('guess-count'),
-            guessCountInput: document.getElementById('guess-count-select'),
+            guessCountInput: document.getElementById('card-count-select'),
             submitGuessCountBtn: document.getElementById('submit-guess-count-btn'),
                 
             suitsCheckboxes: document.getElementById('suits-checkboxes'),
@@ -265,11 +263,6 @@
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 logMessage(`Отримано: ${event.data}`);
-
-                // Якщо ми чекаємо на вгадування, ігноруємо оновлення стану
-                //if (data.type === 'update_state' && waitingForGuess) {
-                  // return;
-                //}
                 
                 switch (data.type) {
                     case 'joined_room':
@@ -304,8 +297,7 @@
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
                         //elements.targetPlayerNameGuess.textContent = data.target_player;
                         //elements.cardRankGuess.textContent = data.card_rank;
-                        //waitingForGuess = true; // ВСТАНОВЛЮЄМО ЦЕЙ ПРАПОРЕЦЬ
-                        break;
+                        break;
                     case 'guess_suits_needed':
                         hideAllControls();
                         elements.guessSuitsForm.style.display = 'block';
@@ -371,7 +363,7 @@
 
       // Додайте обробник подій для нової кнопки
       elements.submitGuessCountBtn.onclick = () => {
-      const count = 2;   //parseInt(elements.guessCountInput.value, 10);
+      const count = parseInt(elements.guessCountInput.value, 10);
       alert("count: " + count);
 alert(JSON.stringify({ type: 'guess_count' }));
 alert(JSON.stringify({ room: myRoomId }));
@@ -379,7 +371,7 @@ alert(JSON.stringify({ room: myRoomId }));
 
       if (!isNaN(count)) {
           socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
-          //elements.guessCount.style.display = 'none'; // ховаємо форму після відправки
+          elements.guessCount.style.display = 'none'; // ховаємо форму після відправки
       } else {
           logMessage('Будь ласка, виберіть кількість.');
       }
