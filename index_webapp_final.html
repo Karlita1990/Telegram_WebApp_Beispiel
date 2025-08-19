@@ -283,8 +283,8 @@
                         //hideAllControls();
                         elements.guessCountForm.style.display = 'block';
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
-                        // elements.targetPlayerNameGuess.textContent = data.target_player;
-                        // elements.cardRankGuess.textContent = data.card_rank;
+                        elements.targetPlayerNameGuess.textContent = data.target_player;
+                        elements.cardRankGuess.textContent = data.card_rank;
                         break;
                     case 'guess_suits_needed':
                         hideAllControls();
