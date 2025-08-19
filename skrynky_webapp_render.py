@@ -276,7 +276,7 @@ class Game:
 
         else:
             await self.notify_all(f"Гравець {asking_player.name} не вгадав масті і бере карту з колоди.")
-            await self.draw_card_and_check_sets(asking_player)  //, self.asked_rank)
+            await self.draw_card_and_check_sets(asking_player)  #, self.asked_rank)
             
         await self.check_end_game()
         await self.notify_all_state()
