@@ -371,8 +371,11 @@
 
       // Додайте обробник подій для нової кнопки
       elements.submitGuessCountBtn.onclick = () => {
-      const count = parseInt(elements.guessCountInput.value, 10);
+      const count = 2;   //parseInt(elements.guessCountInput.value, 10);
       alert("count: " + count);
+alert(JSON.stringify({ type: 'guess_count' }));
+alert(JSON.stringify({ room: myRoomId }));
+              
 
       if (!isNaN(count)) {
           socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
