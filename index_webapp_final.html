@@ -272,12 +272,6 @@
                         break;
                     case 'update_state':
                         updateUI(data.state, data.state.my_hand);
-
-                        // Коли хід переходить до вас, встановлюємо waitingForGuess в false
-                        const myPlayerState = data.state.players.find(p => p.name === myName);
-                        if (data.state.game_started && myPlayerState && myPlayerState.is_turn) {
-                            waitingForGuess = false;
-                        }
                         break;
                     case 'start_game':
                         logMessage('Гра розпочалась!');
