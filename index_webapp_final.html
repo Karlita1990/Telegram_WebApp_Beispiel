@@ -70,8 +70,7 @@
 
                 <div id="guess-count" style="display: none;">
                     <p>Вгадайте, скільки карт з цим рангом є у вашого суперника?</p>
-                    <p>Гравець <span id="target-player-name-guess"></span> має карти значення <span id="card-rank-guess"></span>. Скільки їх у нього?</p>
-                    <input type="number" id="guess-count-input" min="1" max="4">
+                    <input type="number" id="guess-count-input" min="1" max="4">
                     <button id="submit-guess-count-btn">Відправити</button>
                 </div>
 
@@ -282,7 +281,7 @@
                         break;
                     case 'guess_count_needed':
                         //hideAllControls();
-                        elements.guessCountForm.style.display = 'block';
+                        elements.guessCount.style.display = 'block';
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
                         elements.targetPlayerNameGuess.textContent = data.target_player;
                         elements.cardRankGuess.textContent = data.card_rank;
