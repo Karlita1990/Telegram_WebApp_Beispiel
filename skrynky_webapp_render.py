@@ -213,17 +213,34 @@ class Game:
     async def handle_guess_count(self, guessing_player_name, count):
         asking_player = self.players.get(guessing_player_name)
         target_player = self.players.get(self.target_player)
-        
+
+        # Визначаємо правильну кількість карт у суперника
         correct_count = sum(1 for card in target_player.hand if card[:-1] == self.asked_rank)
-        
+    
+        # Додаємо запис в історію гри
+        self.history.append(f"Гравець {asking_player.name} вгадує, що у гравця {target_player.name} {count} карт рангу {self.asked_rank}.")
+
         if count == correct_count:
+            # Успішне вгадування кількості
+            self.history.append(f"Гравець {asking_player.name} вгадав кількість карт: {count}. Він продовжує вгадувати масті.")
+
+            # Відправляємо клієнту повідомлення з даними, необхідними для відображення форми
             await asking_player.websocket.send(json.dumps({
-                'type': 'guess_suits_needed'
+                'type': 'guess_suits_needed',
+                'target_player': self.target_player,
+                'card_rank': self.asked_rank,
+                'correct_count': correct_count
             }))
-            await self.notify_all(f"Гравець {asking_player.name} вгадав кількість карт: {count}. Він продовжує вгадувати масті.")
+        
+            # Встановлюємо наступний крок
+            self.current_step = 'guess_suits'
+
         else:
-            await self.notify_all(f"Гравець {asking_player.name} не вгадав кількість. Він бере карту з колоди.")
-            await self.draw_card_and_check_sets(asking_player)#, self.asked_rank)
+            # Невдале вгадування
+            self.history.append(f"Гравець {asking_player.name} не вгадав кількість. Він бере карту з колоди.")
+        
+            # Далі продовжуємо гру, як і раніше
+            await self.draw_card_and_check_sets(asking_player)
 
         await self.check_end_game()
         await self.notify_all_state()
