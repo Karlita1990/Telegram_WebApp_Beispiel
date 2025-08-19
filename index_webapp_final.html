@@ -369,24 +369,19 @@
             }
         }
 
-// Додайте обробник подій для нової кнопки
-    elements.submitGuessCountBtn.onclick = () => {
-        alert("dies funktioniert!!!");
-        alert("count, 10: " + parseInt(elements.guessCountInput.value, 10));
-        //const count = parseInt(elements.guessCountInput.value, 10);
-       // if (!isNaN(count)) {
-        //    socket.send(JSON.stringify({ type: 'guess_count', count: count }));
-        //    elements.guessCount.style.display = 'none';
-     //   }
-          const count = 2; //elements.guessCountInput.value;
-            if (count) {
-                    //alert(elements.guessCountInput.value);
-                    alert(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
-                socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: parseInt(count) }));
-            } else {
-                logMessage('Будь ласка, введіть кількість.');
-            }
-    };
+      // Додайте обробник подій для нової кнопки
+      elements.submitGuessCountBtn.onclick = () => {
+      const count = parseInt(elements.guessCountInput.value, 10);
+      alert("count: " + count);
+
+      if (!isNaN(count)) {
+          socket.send(JSON.stringify({ type: 'guess_count', room: myRoomId, count: count }));
+          //elements.guessCount.style.display = 'none'; // ховаємо форму після відправки
+      } else {
+          logMessage('Будь ласка, виберіть кількість.');
+      }
+  };
+
 
 
             
