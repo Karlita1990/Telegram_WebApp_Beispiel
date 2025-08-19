@@ -121,6 +121,8 @@
         let myRoomId = '';
         let myCards = [];
 
+        let waitingForGuess = false;   // щоб пригальмувати оновлення стану при вгадуванні кількості карт
+
         const elements = {
             lobby: document.getElementById('lobby'),
             game: document.getElementById('game'),
@@ -257,6 +259,11 @@
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 logMessage(`Отримано: ${event.data}`);
+
+                // Якщо ми чекаємо на вгадування, ігноруємо оновлення стану
+                if (data.type === 'update_state' && waitingForGuess) {
+                   return;
+                }
                 
                 switch (data.type) {
                     case 'joined_room':
@@ -266,6 +273,12 @@
                         break;
                     case 'update_state':
                         updateUI(data.state, data.state.my_hand);
+
+                        // Коли хід переходить до вас, встановлюємо waitingForGuess в false
+                        const myPlayerState = data.state.players.find(p => p.name === myName);
+                        if (data.state.game_started && myPlayerState && myPlayerState.is_turn) {
+                            waitingForGuess = false;
+                        }
                         break;
                     case 'start_game':
                         logMessage('Гра розпочалась!');
@@ -285,6 +298,7 @@
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
                         elements.targetPlayerNameGuess.textContent = data.target_player;
                         elements.cardRankGuess.textContent = data.card_rank;
+                        waitingForGuess = true; // ВСТАНОВЛЮЄМО ЦЕЙ ПРАПОРЕЦЬ
                         break;
                     case 'guess_suits_needed':
                         hideAllControls();
