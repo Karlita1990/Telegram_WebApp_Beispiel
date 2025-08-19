@@ -216,7 +216,7 @@ class Game:
         
         correct_count = sum(1 for card in target_player.hand if card[:-1] == self.asked_rank)
         
-        if (int)count == correct_count:
+        if int(count) == correct_count:
             await asking_player.websocket.send(json.dumps({
                 'type': 'guess_suits_needed',
                 'card_rank': self.asked_rank,
