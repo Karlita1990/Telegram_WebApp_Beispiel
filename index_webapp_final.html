@@ -236,7 +236,7 @@
 
         function hideAllControls() {
             elements.gameActions.style.display = 'none';
-            //elements.guessCountForm.style.display = 'none';
+            elements.guessCount.style.display = 'none';
             elements.guessSuitsForm.style.display = 'none';
             elements.responseButtons.style.display = 'none';
         }
@@ -292,7 +292,7 @@
                         elements.askedCardRank.textContent = data.card_rank;
                         break;
                     case 'guess_count_needed':
-                        //hideAllControls();
+                        hideAllControls();
                         elements.guessCount.style.display = 'block';
                         // Оновлення тексту, якщо потрібно (наприклад, з даними від сервера)
                         //elements.targetPlayerNameGuess.textContent = data.target_player;
