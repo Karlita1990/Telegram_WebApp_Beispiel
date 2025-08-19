@@ -71,6 +71,12 @@
                 <div id="guess-count" style="display: none;">
                     <p>Вгадайте, скільки карт з цим рангом є у вашого суперника?</p>
                     <input type="number" id="guess-count-input" min="1" max="4">
+                    <select id="card-count-select">
+                        <option value="">Вибрати значення</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
                     <button id="submit-guess-count-btn">Відправити</button>
                 </div>
 
@@ -141,7 +147,7 @@
             cardRankSelect: document.getElementById('card-rank-select'),
                 
             guessCountForm: document.getElementById('guess-count-form'),
-            guessCountInput: document.getElementById('guess-count-input'),
+            guessCountInput: document.getElementById('guess-count-select'),
             guessSuitsForm: document.getElementById('guess-suits-form'),
 
             guessCount: document.getElementById('guess-count'),
