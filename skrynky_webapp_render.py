@@ -218,11 +218,11 @@ class Game:
         correct_count = sum(1 for card in target_player.hand if card[:-1] == self.asked_rank)
     
         # Додаємо запис в історію гри
-        self.history.append(f"Гравець {asking_player.name} вгадує, що у гравця {target_player.name} {count} карт рангу {self.asked_rank}.")
+        await self.notify_all(f"Гравець {asking_player.name} вгадує, що у гравця {target_player.name} {count} карт рангу {self.asked_rank}.")
 
         if count == correct_count:
             # Успішне вгадування кількості
-            self.history.append(f"Гравець {asking_player.name} вгадав кількість карт: {count}. Він продовжує вгадувати масті.")
+            await self.notify_all(f"Гравець {asking_player.name} вгадав кількість карт: {count}. Він продовжує вгадувати масті.")
 
             # Відправляємо клієнту повідомлення з даними, необхідними для відображення форми
             await asking_player.websocket.send(json.dumps({
@@ -237,7 +237,7 @@ class Game:
 
         else:
             # Невдале вгадування
-            self.history.append(f"Гравець {asking_player.name} не вгадав кількість. Він бере карту з колоди.")
+            await self.notify_all(f"Гравець {asking_player.name} не вгадав кількість. Він бере карту з колоди.")
         
             # Далі продовжуємо гру, як і раніше
             await self.draw_card_and_check_sets(asking_player)
