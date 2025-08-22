@@ -198,16 +198,25 @@ class Game:
         await self.check_end_game()
         await self.notify_all_state()
 
-    async def draw_card_and_check_sets(self, player): 
+    async def draw_card_and_check_sets(self, player):
         if not self.deck.is_empty():
             new_card = self.deck.draw()[0]
             player.hand.append(new_card)
-            
+
             await self.notify_all(f"Гравець {player.name} бере карту з колоди.")
-            
-            if self.check_for_sets(player):
+
+            # Перевірка на скриньки
+            sets_collected = self.check_for_sets(player)
+            if sets_collected:
                 await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
-            
+
+            # Перевірка на порожню руку після збору скриньки
+            if not player.hand and not self.deck.is_empty():
+                await self.notify_all(f"У гравця {player.name} порожня рука після збору скриньки. Автоматично бере ще одну карту.")
+                new_card_after_set = self.deck.draw()[0]
+                player.hand.append(new_card_after_set)
+        
+            # Передача ходу лише після всіх перевірок
             await self.next_turn()
 
     async def handle_guess_count(self, guessing_player_name, count):
