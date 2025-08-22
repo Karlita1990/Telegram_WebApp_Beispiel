@@ -262,6 +262,9 @@ class Game:
             await self.notify_all(f"Гравець {asking_player.name} вгадав масті і отримує карти від гравця {target_player.name}.")
             
             self.check_for_sets(asking_player)
+
+            # Якщо у гравця, що вгадав, не залишилось карт, він бере нову з колоди
+            await self.check_and_deal_if_needed(asking_player.name)
             
             # Якщо у гравця, що відповів, не залишилось карт, він бере нову з колоди
             await self.check_and_deal_if_needed(target_player.name)
