@@ -133,7 +133,7 @@ class Game:
         await self.check_and_deal_if_needed(self.asking_player)
         
         await self.notify_all_state()
-        
+
     async def check_end_game(self):
         total_collected = sum(len(p.collected_sets) for p in self.players.values())
         # Якщо загальна кількість зібраних скриньок досягла 9
