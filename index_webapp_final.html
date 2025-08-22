@@ -46,6 +46,9 @@
         }
         #game-end-dialog h2 { margin-top: 0; }
         #game-end-dialog button { margin-top: 20px; }
+        /* 🔽 Відступ між мастями та кнопкою */
+        #suits-checkboxes { margin-bottom: 2em; /* зміни на 1.5em якщо хочеш менший відступ */
+        }
 
     </style>
 </head>
@@ -68,7 +71,7 @@
             
             <div id="controls">
                 <div id="game-actions" style="display: none;">
-                    <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
+                    <p>Ваш хід, <span id="asking-player-name"></span>! Виберіть гравця та карту для запиту.</p> <!-- замість asking-player-name було current-player-name -->
                     <select id="target-player-select"></select>
                     <select id="card-rank-select">
                         <option value="">Вибрати значення</option>
@@ -129,6 +132,7 @@
         <div id="game-end-dialog" style="display: none;">
             <h2 id="winner-name"></h2>
             <button onclick="startNewGame()">Нова гра</button>
+            <button onclick="closeGameDialog()">Закрити</button>
         </div>
 
         <div class="message-box">
@@ -188,6 +192,12 @@
             telegramUser = "Тестовий гравець";
         }
 
+        function closeGameDialog() {
+            if (elements.gameEndDialog) {
+                elements.gameEndDialog.style.display = 'none';
+            }
+        }
+        
         function logMessage(message) {
             const p = document.createElement('p');
             p.textContent = message;
