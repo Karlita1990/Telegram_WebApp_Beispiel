@@ -245,7 +245,7 @@
             myName = elements.playerNameInput.value.trim();
             myRoomId = elements.roomIdInput.value.trim();
 
-            if (myName && myRoomId) {
+            if (myName && myRoomId) {                   
                 connectWebSocket();
             } else {
                 elements.lobbyMessage.textContent = 'Будь ласка, введіть ім\'я та ID кімнати.';
@@ -275,6 +275,9 @@
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 logMessage(`Отримано: ${event.data}`);
+                    //
+                    addLogEntry(`Отримано: ${JSON.stringify(data)}`, 'system'); // Додайте цей рядок
+    
                 
                 switch (data.type) {
                     case 'joined_room':
