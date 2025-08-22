@@ -47,8 +47,13 @@
         #game-end-dialog h2 { margin-top: 0; }
         #game-end-dialog button { margin-top: 20px; }
         /* 🔽 Відступ між мастями та кнопкою */
-        #suits-checkboxes { margin-bottom: 2em; /* зміни на 1.5em якщо хочеш менший відступ */
-        }
+        #suits-checkboxes { 
+            margin-bottom: 2em; /* зміни на 1.5em якщо хочеш менший відступ */
+            display: flex;
+            justify-content: space-around; /* або space-between для чіткого розкиду */
+            max-width: 400px; /* обмеж ширину, щоб не було занадто розтягнуто */
+            margin: 0 auto 2em auto; /* центр по горизонталі + відступ знизу */
+                          }
 
     </style>
 </head>
@@ -71,7 +76,7 @@
             
             <div id="controls">
                 <div id="game-actions" style="display: none;">
-                    <p>Ваш хід, <span id="asking-player-name"></span>! Виберіть гравця та карту для запиту.</p> <!-- замість asking-player-name було current-player-name -->
+                    <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
                     <select id="target-player-select"></select>
                     <select id="card-rank-select">
                         <option value="">Вибрати значення</option>
@@ -175,7 +180,8 @@
             askingPlayerName: document.getElementById('asking-player-name'),
             askedCardRank: document.getElementById('asked-card-rank'),
             gameEndDialog: document.getElementById('game-end-dialog'),
-            winnerName: document.getElementById('winner-name')
+            winnerName: document.getElementById('winner-name'),
+            currentPlayerName: document.getElementById('current-player-name'), // Додано
         };
 
         if (tg) {
@@ -212,6 +218,9 @@
                 li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
                 elements.playersList.appendChild(li);
             });
+
+            // Додайте цей рядок для оновлення імені поточного гравця
+            elements.currentPlayerName.textContent = state.current_turn;
             
             elements.playerHand.innerHTML = '';
             if (myHand && myHand.length > 0) {
