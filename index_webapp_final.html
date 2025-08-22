@@ -63,11 +63,11 @@
             <p id="lobby-message"></p>
         </div>
 
-        <div id="game" class="hidden">
+        <div id="game" style="display: none;">
             <div class="game-state-message" id="game-status">Очікування на гравців...</div>
             
             <div id="controls">
-                <div id="game-actions" class="hidden">
+                <div id="game-actions" style="display: none;">
                     <p>Ваш хід, <span id="current-player-name"></span>! Виберіть гравця та карту для запиту.</p>
                     <select id="target-player-select"></select>
                     <select id="card-rank-select">
@@ -85,7 +85,7 @@
                     <button onclick="askForCard()">Запитати</button>
                 </div>
 
-                <div id="guess-count" class="hidden">
+                <div id="guess-count" style="display: none;">
                     <p>Вгадайте, скільки карт з цим рангом є у вашого суперника?</p>
                     <select id="card-count-select">  
                         <option value="">Вибрати значення</option>  
@@ -96,18 +96,18 @@
                     <button id="submit-guess-count-btn">Відправити</button>
                 </div>
                 
-                <div id="guess-suits-form" class="hidden">
+                <div id="guess-suits-form" style="display: none;">
                     <p>Скільки мастей ви вгадаєте?</p>
                     <div id="suits-checkboxes">
                         <label><input type="checkbox" name="suit" value="♥"> ♥</label>
                         <label><input type="checkbox" name="suit" value="♦"> ♦</label>
-                        <label><input type="checkbox" name="checkbox" value="♣"> ♣</label>
+                        <label><input type="checkbox" name="suit" value="♣"> ♣</label>
                         <label><input type="checkbox" name="suit" value="♠"> ♠</label>
                     </div>
                     <button onclick="guessSuits()">Вгадати масті</button>
                 </div>
 
-                <div id="response-buttons" class="hidden">
+                <div id="response-buttons" style="display: none;">
                     <p>Гравець <span id="asking-player-name"></span> запитує карту <span id="asked-card-rank"></span>. У вас вона є?</p>
                     <button onclick="respondToAsk('yes')">Так</button>
                     <button onclick="respondToAsk('no')">Ні</button>
@@ -115,7 +115,7 @@
             </div>
 
             <div id="game-info">
-                <button id="startGameBtn" onclick="startGame()" class="hidden">Розпочати гру</button>
+                <button id="startGameBtn" onclick="startGame()" >Розпочати гру</button>
                 <p><strong>Ваші карти:</strong></p>
                 <div id="player-hand" class="card-container"></div>
                 <p><strong>Зібрані скриньки:</strong></p>
@@ -126,7 +126,7 @@
             </div>
         </div>
         
-        <div id="game-end-dialog" class="hidden">
+        <div id="game-end-dialog" style="display: none;">
             <h2 id="winner-name"></h2>
             <button onclick="startNewGame()">Нова гра</button>
         </div>
@@ -233,7 +233,7 @@
             hideAllControls();
 
             if (state.game_started && state.current_turn === myName) {
-                elements.gameActions.classList.remove('hidden');
+                elements.gameActions.style.display = 'block';
                 elements.targetPlayerSelect.innerHTML = state.players
                     .filter(p => p.name !== myName)
                     .map(p => `<option value="${p.name}">${p.name}</option>`)
@@ -245,18 +245,18 @@
             const isRoomAdmin = state.room_admin === myName;
             
             if (isRoomAdmin && !state.game_started) {
-                elements.startGameBtn.classList.remove('hidden');
+                elements.gameActions.style.display = 'block';
                 elements.startGameBtn.disabled = state.players.length < 2;
             } else {
-                elements.startGameBtn.classList.add('hidden');
+                elements.startGameBtn.style.display = 'none';
             }
         }
 
         function hideAllControls() {
-            elements.gameActions.classList.add('hidden');
-            elements.guessCount.classList.add('hidden');
-            elements.guessSuitsForm.classList.add('hidden');
-            elements.responseButtons.classList.add('hidden');
+            elements.gameActions.style.display = 'none';
+            //elements.guessCount.style.display = 'none';
+            //elements.guessSuitsForm.style.display = 'none';
+            elements.responseButtons.style.display = 'none';
         }
 
         function joinRoom() {
@@ -292,31 +292,31 @@
                 
                 switch (data.type) {
                     case 'joined_room':
-                        elements.lobby.classList.add('hidden');
-                        elements.game.classList.remove('hidden');
+                        elements.lobby.style.display = 'none';
+                        elements.game.style.display = 'block';
                         addLogEntry(`Приєднано до кімнати: ${myRoomId}`);
                         break;
                     case 'update_state':
                         updateUI(data.state, data.state.my_hand);
                         break;
                     case 'game_over':
-                        elements.game.classList.add('hidden');
-                        elements.gameEndDialog.classList.remove('hidden');
+                        elements.game.classList.style.display = 'none';
+                        elements.gameEndDialog.style.display = 'block';
                         elements.winnerName.textContent = `Гра закінчена! Переможець: ${data.winner}.`;
                         break;
                     case 'ask_response_needed':
                         hideAllControls();
-                        elements.responseButtons.classList.remove('hidden');
+                        elements.responseButtons.style.display = 'block';
                         elements.askingPlayerName.textContent = data.asking_player;
                         elements.askedCardRank.textContent = data.card_rank;
                         break;
                     case 'guess_count_needed':
                         hideAllControls();
-                        elements.guessCount.classList.remove('hidden');
+                        elements.guessSuitsForm.style.display = 'block';
                         break;
                     case 'guess_suits_needed':
                         hideAllControls();
-                        elements.guessSuitsForm.classList.remove('hidden');
+                        elements.guessSuitsForm.style.display = 'block';
                         break;
                     case 'log':
                         addLogEntry(data.message);
@@ -345,8 +345,8 @@
         }
         
         function startNewGame() {
-            elements.gameEndDialog.classList.add('hidden');
-            elements.game.classList.remove('hidden');
+            elements.gameEndDialog.style.display = 'none';
+            elements.game.style.display = 'block';
             startGame();
         }
 
@@ -371,7 +371,7 @@
             if (suits.length > 0) {
                 const message_to_send = { type: 'guess_suits', room: myRoomId, suits: suits };
                 socket.send(JSON.stringify(message_to_send));
-                elements.guessSuitsForm.classList.add('hidden');
+                elements.guessSuitsForm.style.display = 'none';
             } else {
                 addLogEntry('Будь ласка, виберіть масті.');
             }
@@ -382,7 +382,7 @@
             if (!isNaN(count)) {
                 const message_to_send = { type: 'guess_count', room: myRoomId, count: count };
                 socket.send(JSON.stringify(message_to_send));
-                elements.guessCount.classList.add('hidden');
+                elements.guessCount.style.display = 'none';
             } else {
                 addLogEntry('Будь ласка, виберіть кількість.');
             }
