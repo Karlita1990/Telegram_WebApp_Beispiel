@@ -41,8 +41,6 @@ class Game:
         self.target_player = None
         self.asked_rank = None
         self.room_admin = None
-        # Переносимо ініціалізацію сюди
-        self.ready_to_start = set() 
 
     async def add_player(self, name, websocket):
         if not self.game_started and len(self.players) < 6:
@@ -68,12 +66,6 @@ class Game:
         if len(self.players) >= 2 and not self.game_started:
             self.game_started = True
             self.deck = Deck()
-
-            # Очищаємо руки та зібрані скриньки всіх гравців
-            for player in self.players.values():
-                player.hand = []
-                player.collected_sets = []
-            
             await self.deal_initial_cards()
             player_names = list(self.players.keys())
             self.current_turn_index = 0
@@ -144,38 +136,11 @@ class Game:
 
     async def check_end_game(self):
         total_collected = sum(len(p.collected_sets) for p in self.players.values())
-    
-        # Якщо загальна кількість зібраних скриньок досягла 9
         if total_collected == 9:
-            # 1. Знаходимо максимальну кількість зібраних скриньок
-            max_sets = 0
-            if self.players:
-                max_sets = max(len(p.collected_sets) for p in self.players.values())
-        
-            # 2. Збираємо імена всіх переможців
-            winners = [p.name for p in self.players.values() if len(p.collected_sets) == max_sets]
-        
-            # 3. Формуємо повідомлення про перемогу або нічию
-            winner_message = ""
-            if len(winners) == 1:
-                winner_message = f"Гра закінчена! Переможець: {winners[0]}."
-            else:
-                winner_message = f"Гра закінчена! Нічия! Переможці: {', '.join(winners)}."
-
-            # Відправляємо повідомлення про завершення гри всім гравцям
+            winner = max(self.players.values(), key=lambda p: len(p.collected_sets))
             for p in self.players.values():
-                is_admin = p.name == self.room_admin
-                await p.websocket.send(json.dumps({
-                    'type': 'game_over', 
-                    'message': winner_message, 
-                    'winner': ', '.join(winners),
-                    'isAdmin': is_admin
-                }))
-
-            # 🔥 ВАЖЛИВА ЗМІНА 🔥
-            # Встановлюємо стан гри на False, щоб можна було розпочати нову
+                await p.websocket.send(json.dumps({'type': 'game_over', 'winner': winner.name}))
             self.game_started = False
-            
             return True
         return False
     
@@ -212,7 +177,7 @@ class Game:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
             await self.draw_card_and_check_sets(asking_player)#, self.asked_rank)
         
-        #await self.check_end_game()
+        await self.check_end_game()
         await self.notify_all_state()
 
     async def draw_card_and_check_sets(self, player):
@@ -268,7 +233,7 @@ class Game:
             # Далі продовжуємо гру, як і раніше
             await self.draw_card_and_check_sets(asking_player)
 
-        #await self.check_end_game()
+        await self.check_end_game()
         await self.notify_all_state()
 
     async def handle_guess_suits(self, asking_player_name, suits):
@@ -373,14 +338,6 @@ async def handler(websocket):
                         pass
                     else:
                         await websocket.send(json.dumps({'type': 'error', 'message': "Недостатньо гравців."}))
-
-                    # НОВЕ: Обробка запиту на нову гру від адміна
-                elif data['type'] == 'invite_new_game' and player_name == game.room_admin:
-                    await game.handle_invite_new_game()
-        
-                    # НОВЕ: Обробка прийняття запрошення на нову гру
-                elif data['type'] == 'accept_new_game':
-                    await game.handle_accept_new_game(player_name)
                 
                 elif data['type'] == 'ask_card' and player_name == game.asking_player:
                     await game.handle_ask_card(player_name, data['target'], data['card_rank'])
@@ -406,36 +363,6 @@ async def handler(websocket):
             else:
                 await game.notify_all(f"Гравець {player_name} відключився.")
                 await game.notify_all_state()
-
-# НОВИЙ/ЗМІНЕНИЙ МЕТОД
-    async def handle_invite_new_game(self):
-        """Скидає стан гри і сповіщає гравців про запрошення до нової гри."""
-        self.game_started = False
-        self.deck = Deck()
-        self.current_turn_index = 0
-        self.asking_player = None
-        self.target_player = None
-        self.asked_rank = None
-        self.ready_to_start = set()
-        
-        for p in self.players.values():
-            is_admin = p.name == self.room_admin
-            await p.websocket.send(json.dumps({
-                'type': 'joined_room', # ось тут зміна!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                'isAdmin': is_admin,
-                'adminName': self.room_admin
-            }))
-        await self.notify_all_state()
-
-# НОВИЙ МЕТОД
-    async def handle_accept_new_game(self, player_name):
-        self.ready_to_start.add(player_name)
-        if len(self.ready_to_start) == len(self.players):
-            await self.start_game()
-            self.ready_to_start.clear()
-        else:
-            await self.notify_all(f"Гравець {player_name} готовий до нової гри.")
-            await websocket.send(json.dumps({'type': 'joined_room'}))
 
 async def main():
     port_env = os.environ.get("PORT")
