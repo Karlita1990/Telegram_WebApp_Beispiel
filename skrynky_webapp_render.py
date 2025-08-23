@@ -369,6 +369,14 @@ async def handler(websocket):
                         pass
                     else:
                         await websocket.send(json.dumps({'type': 'error', 'message': "Недостатньо гравців."}))
+
+                    # НОВЕ: Обробка запиту на нову гру від адміна
+                elif data['type'] == 'start_new_game' and player_name == game.room_admin:
+                    await game.handle_start_new_game()
+        
+                    # НОВЕ: Обробка прийняття запрошення на нову гру
+                elif data['type'] == 'accept_new_game':
+                    await game.handle_accept_new_game(player_name)
                 
                 elif data['type'] == 'ask_card' and player_name == game.asking_player:
                     await game.handle_ask_card(player_name, data['target'], data['card_rank'])
@@ -395,29 +403,35 @@ async def handler(websocket):
                 await game.notify_all(f"Гравець {player_name} відключився.")
                 await game.notify_all_state()
 
-async def handle_invite_new_game(self, player_name):
-    self.game_started = False
+# НОВИЙ/ЗМІНЕНИЙ МЕТОД
+    async def handle_start_new_game(self):
+        """Починає процес перезапуску гри, скидаючи стан і сповіщаючи гравців."""
+        self.game_started = False
+        self.deck = Deck()
+        self.current_turn_index = 0
+        self.asking_player = None
+        self.target_player = None
+        self.asked_rank = None
+        self.ready_to_start = set()
+        
+        # Сповіщаємо всіх про запрошення
+        for p in self.players.values():
+            is_admin = p.name == self.room_admin
+            await p.websocket.send(json.dumps({
+                'type': 'invite_new_game',
+                'isAdmin': is_admin,
+                'adminName': self.room_admin
+            }))
+        await self.notify_all_state()
 
-    # Сповіщаємо всіх про запрошення
-    for p in self.players.values():
-        is_admin = p.name == player_name
-        await p.websocket.send(json.dumps({
-            'type': 'invite_new_game', 
-            'isAdmin': is_admin,
-            'adminName': player_name
-        }))
-    await self.notify_all_state()
-
-# Можна створити новий словник для відстеження
-#self.ready_to_start = set()
-
-async def handle_accept_new_game(self, player_name):
-    self.ready_to_start.add(player_name)
-    if len(self.ready_to_start) == len(self.players):
-        await self.start_game()
-        self.ready_to_start.clear()
-    else:
-        await self.notify_all(f"Гравець {player_name} готовий до нової гри.")
+# НОВИЙ МЕТОД
+    async def handle_accept_new_game(self, player_name):
+        self.ready_to_start.add(player_name)
+        if len(self.ready_to_start) == len(self.players):
+            await self.start_game()
+            self.ready_to_start.clear()
+        else:
+            await self.notify_all(f"Гравець {player_name} готовий до нової гри.")
 
 async def main():
     port_env = os.environ.get("PORT")
