@@ -41,6 +41,8 @@ class Game:
         self.target_player = None
         self.asked_rank = None
         self.room_admin = None
+        # Переносимо ініціалізацію сюди
+        self.ready_to_start = set() 
 
     async def add_player(self, name, websocket):
         if not self.game_started and len(self.players) < 6:
@@ -407,7 +409,7 @@ async def handle_invite_new_game(self, player_name):
     await self.notify_all_state()
 
 # Можна створити новий словник для відстеження
-self.ready_to_start = set()
+#self.ready_to_start = set()
 
 async def handle_accept_new_game(self, player_name):
     self.ready_to_start.add(player_name)
