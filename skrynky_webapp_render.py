@@ -134,38 +134,36 @@ class Game:
         
         await self.notify_all_state()
 
-
-async def check_end_game(self):
-    total_collected = sum(len(p.collected_sets) for p in self.players.values())
+    async def check_end_game(self):
+        total_collected = sum(len(p.collected_sets) for p in self.players.values())
+        if total_collected == 9:
+            max_sets = 0
+            if self.players:
+                max_sets = max(len(p.collected_sets) for p in self.players.values())
     
-    if total_collected == 9:
-        max_sets = 0
-        if self.players:
-            max_sets = max(len(p.collected_sets) for p in self.players.values())
-    
-        winners = [p.name for p in self.players.values() if len(p.collected_sets) == max_sets]
+            winners = [p.name for p in self.players.values() if len(p.collected_sets) == max_sets]
         
-        winner_message = ""
-        # Визначаємо, чи це "чиста" нічия
-        if len(winners) == len(self.players):
-            winner_message = f"Гра закінчена! Повна нічия! Всі гравці набрали по {max_sets} скриньок."
-        elif len(winners) == 1:
-            winner_message = f"Гра закінчена! Переможець: {winners[0]}."
-        else:
-            winner_message = f"Гра закінчена! Нічия серед переможців! Найбільше скриньок набрали: {', '.join(winners)}."
+            winner_message = ""
+            # Визначаємо, чи це "чиста" нічия
+            if len(winners) == len(self.players):
+                winner_message = f"Гра закінчена! Повна нічия! Всі гравці набрали по {max_sets} скриньок."
+            elif len(winners) == 1:
+                winner_message = f"Гра закінчена! Переможець: {winners[0]}."
+            else:
+                winner_message = f"Гра закінчена! Нічия! Найбільше скриньок набрали: {', '.join(winners)}."
 
-        for p in self.players.values():
-            is_admin = p.name == self.room_admin
-            await p.websocket.send(json.dumps({
-                'type': 'game_over',
-                'message': winner_message,
-                'winner': ', '.join(winners),
-                'isAdmin': is_admin
-            }))
+            for p in self.players.values():
+                is_admin = p.name == self.room_admin
+                await p.websocket.send(json.dumps({
+                    'type': 'game_over',
+                    'message': winner_message,
+                    'winner': ', '.join(winners),
+                    'isAdmin': is_admin
+                }))
         
-        self.game_started = False
-        return True
-    return False
+            self.game_started = False
+            return True
+        return False
     
     async def handle_ask_card(self, asking_player_name, target_player_name, card_rank):
         self.asking_player = asking_player_name
