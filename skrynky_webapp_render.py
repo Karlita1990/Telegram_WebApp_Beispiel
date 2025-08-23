@@ -134,7 +134,6 @@ class Game:
         
         await self.notify_all_state()
 
-    # файл `backend.py`
 
 async def check_end_game(self):
     total_collected = sum(len(p.collected_sets) for p in self.players.values())
