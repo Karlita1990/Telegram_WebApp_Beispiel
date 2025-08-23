@@ -53,7 +53,7 @@
             justify-content: space-around; /* або space-between для чіткого розкиду */
             max-width: 400px; /* обмеж ширину, щоб не було занадто розтягнуто */
             margin: 0 auto 2em auto; /* центр по горизонталі + відступ знизу */
-                          }
+        }
         /* 🔽 Розподіл кнопок "Так" / "Ні" по ширині */
         #response-buttons {
             display: flex;
@@ -61,7 +61,6 @@
             gap: 1em; /* проміжок між кнопками */
             margin-top: 1em; /* відступ зверху від тексту */
         }
-
     </style>
 </head>
 <body>
@@ -107,7 +106,7 @@
                         <option value="1">1</option>  
                         <option value="2">2</option>  
                         <option value="3">3</option>   
-                    </select>   
+                    </select>    
                     <button id="submit-guess-count-btn">Відправити</button>
                 </div>
                 
@@ -130,7 +129,7 @@
             </div>
 
             <div id="game-info">
-                <button id="startGameBtn" onclick="startGame()" >Розпочати гру</button>
+                <button id="startGameBtn" onclick="startGame()">Розпочати гру</button>
                 <p><strong>Ваші карти:</strong></p>
                 <div id="player-hand" class="card-container"></div>
                 <p><strong>Зібрані скриньки:</strong></p>
@@ -295,9 +294,9 @@
 
         function hideAllControls() {
             elements.gameActions.style.display = 'none';
-            //elements.guessCount.style.display = 'none';
-            //elements.guessSuitsForm.style.display = 'none';
-            elements.responseButtons.style.display = 'none';
+            //elements.guessCount.style.display = 'none';
+            //elements.guessSuitsForm.style.display = 'none';
+            elements.responseButtons.style.display = 'none';
         }
 
         function joinRoom() {
@@ -334,7 +333,7 @@
                 switch (data.type) {
                     case 'joined_room':
                         elements.lobby.style.display = 'none';
-                        elements.game.style.display = 'block';
+                        elements.game.style.display = 'block';
                         addLogEntry(`Приєднано до кімнати: ${myRoomId}`);
                         break;
                     case 'update_state':
@@ -393,7 +392,7 @@
                         // Викликаємо стару логіку startGame()
                         startGame();
                         break;
-                   }
+                }
             };
 
             socket.onclose = () => {
