@@ -340,7 +340,7 @@
                         updateUI(data.state, data.state.my_hand);
                         break;
                     case 'game_over':
-                        elements.game.style.display = 'none';
+                        //elements.game.style.display = 'none'; - може, оце взагалі тут не треба?
                         elements.gameEndDialog.style.display = 'block';
                         elements.winnerName.textContent = `Гра закінчена! Переможець: ${data.winner}.`;
 
