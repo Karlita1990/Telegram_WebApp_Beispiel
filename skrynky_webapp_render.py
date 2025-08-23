@@ -171,7 +171,11 @@ class Game:
                     'winner': ', '.join(winners),
                     'isAdmin': is_admin
                 }))
-                
+
+            # 🔥 ВАЖЛИВА ЗМІНА 🔥
+            # Встановлюємо стан гри на False, щоб можна було розпочати нову
+            self.game_started = False
+            
             return True
         return False
     
