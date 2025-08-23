@@ -206,7 +206,7 @@ class Game:
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Ні'. {asking_player.name} іде на рибалку.")
             await self.draw_card_and_check_sets(asking_player)#, self.asked_rank)
         
-        await self.check_end_game()
+        #await self.check_end_game()
         await self.notify_all_state()
 
     async def draw_card_and_check_sets(self, player):
@@ -262,7 +262,7 @@ class Game:
             # Далі продовжуємо гру, як і раніше
             await self.draw_card_and_check_sets(asking_player)
 
-        await self.check_end_game()
+        #await self.check_end_game()
         await self.notify_all_state()
 
     async def handle_guess_suits(self, asking_player_name, suits):
@@ -392,6 +392,30 @@ async def handler(websocket):
             else:
                 await game.notify_all(f"Гравець {player_name} відключився.")
                 await game.notify_all_state()
+
+async def handle_invite_new_game(self, player_name):
+    self.game_started = False
+
+    # Сповіщаємо всіх про запрошення
+    for p in self.players.values():
+        is_admin = p.name == player_name
+        await p.websocket.send(json.dumps({
+            'type': 'invite_new_game', 
+            'isAdmin': is_admin,
+            'adminName': player_name
+        }))
+    await self.notify_all_state()
+
+# Можна створити новий словник для відстеження
+self.ready_to_start = set()
+
+async def handle_accept_new_game(self, player_name):
+    self.ready_to_start.add(player_name)
+    if len(self.ready_to_start) == len(self.players):
+        await self.start_game()
+        self.ready_to_start.clear()
+    else:
+        await self.notify_all(f"Гравець {player_name} готовий до нової гри.")
 
 async def main():
     port_env = os.environ.get("PORT")
