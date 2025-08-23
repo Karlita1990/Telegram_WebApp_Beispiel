@@ -421,7 +421,7 @@ async def handler(websocket):
         for p in self.players.values():
             is_admin = p.name == self.room_admin
             await p.websocket.send(json.dumps({
-                'type': 'invite_new_game',
+                'type': 'joined_room', # ось тут зміна!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 'isAdmin': is_admin,
                 'adminName': self.room_admin
             }))
@@ -435,6 +435,7 @@ async def handler(websocket):
             self.ready_to_start.clear()
         else:
             await self.notify_all(f"Гравець {player_name} готовий до нової гри.")
+            await websocket.send(json.dumps({'type': 'joined_room'}))
 
 async def main():
     port_env = os.environ.get("PORT")
