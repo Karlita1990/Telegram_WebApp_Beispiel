@@ -54,6 +54,13 @@
             max-width: 400px; /* обмеж ширину, щоб не було занадто розтягнуто */
             margin: 0 auto 2em auto; /* центр по горизонталі + відступ знизу */
                           }
+        /* 🔽 Розподіл кнопок "Так" / "Ні" по ширині */
+        #response-buttons {
+            display: flex;
+            justify-content: space-around; /* або space-between для розтягування по краях */
+            gap: 1em; /* проміжок між кнопками */
+            margin-top: 1em; /* відступ зверху від тексту */
+        }
 
     </style>
 </head>
@@ -136,8 +143,12 @@
         
         <div id="game-end-dialog" style="display: none;">
             <h2 id="winner-name"></h2>
-            <button onclick="startNewGame()">Нова гра</button>
-            <button onclick="closeGameDialog()">Закрити</button>
+            <div id="admin-controls" style="display: none;">
+                <button onclick="startNewGame()">Нова гра</button>
+            </div>
+            <div id="player-controls" style="display: none;">
+                <button onclick="closeGameDialog()">Закрити</button>
+            </div>
         </div>
 
         <div class="message-box">
@@ -182,6 +193,8 @@
             gameEndDialog: document.getElementById('game-end-dialog'),
             winnerName: document.getElementById('winner-name'),
             currentPlayerName: document.getElementById('current-player-name'), // Додано
+            adminControls: document.getElementById('admin-controls'), // Додано
+            playerControls: document.getElementById('player-controls') // Додано
         };
 
         if (tg) {
@@ -322,6 +335,15 @@
                         elements.game.style.display = 'none';
                         elements.gameEndDialog.style.display = 'block';
                         elements.winnerName.textContent = `Гра закінчена! Переможець: ${data.winner}.`;
+
+                        // Показуємо відповідні кнопки
+                        if (data.isAdmin) {
+                            elements.adminControls.style.display = 'block';
+                            elements.playerControls.style.display = 'none';
+                        } else {
+                            elements.adminControls.style.display = 'none';
+                            elements.playerControls.style.display = 'block';
+                        }
                         break;
                     case 'ask_response_needed':
                         hideAllControls();
