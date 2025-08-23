@@ -65,11 +65,19 @@ class Game:
     async def start_game(self):
         if len(self.players) >= 2 and not self.game_started:
             self.game_started = True
+
+            # Очищуємо стан гравців та колоду для нової гри
+            for p in self.players.values():
+                p.hand = []
+                p.is_turn = False
+                p.collected_sets = []
+            
             self.deck = Deck()
             await self.deal_initial_cards()
             player_names = list(self.players.keys())
             self.current_turn_index = 0
             self.asking_player = player_names[self.current_turn_index]
+            self.players[self.asking_player].is_turn = True
             await self.notify_all("Гра розпочалась! Перший хід за " + self.asking_player)
             
             # Перевіряємо, чи має перший гравець карти, щоб розпочати хід
