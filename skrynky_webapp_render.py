@@ -371,8 +371,8 @@ async def handler(websocket):
                         await websocket.send(json.dumps({'type': 'error', 'message': "Недостатньо гравців."}))
 
                     # НОВЕ: Обробка запиту на нову гру від адміна
-                elif data['type'] == 'start_new_game' and player_name == game.room_admin:
-                    await game.handle_start_new_game()
+                elif data['type'] == 'invite_new_game' and player_name == game.room_admin:
+                    await game.handle_invite_new_game()
         
                     # НОВЕ: Обробка прийняття запрошення на нову гру
                 elif data['type'] == 'accept_new_game':
@@ -404,8 +404,8 @@ async def handler(websocket):
                 await game.notify_all_state()
 
 # НОВИЙ/ЗМІНЕНИЙ МЕТОД
-    async def handle_start_new_game(self):
-        """Починає процес перезапуску гри, скидаючи стан і сповіщаючи гравців."""
+    async def handle_invite_new_game(self):
+        """Скидає стан гри і сповіщає гравців про запрошення до нової гри."""
         self.game_started = False
         self.deck = Deck()
         self.current_turn_index = 0
@@ -414,7 +414,6 @@ async def handler(websocket):
         self.asked_rank = None
         self.ready_to_start = set()
         
-        # Сповіщаємо всіх про запрошення
         for p in self.players.values():
             is_admin = p.name == self.room_admin
             await p.websocket.send(json.dumps({
