@@ -139,23 +139,6 @@
                 <ul id="players-list"></ul>
             </div>
         </div>
-        
-        <div id="game-end-dialog" style="display: none;">
-            <h2 id="winner-name"></h2>
-            <div id="admin-controls" style="display: none;">
-                <button onclick="startNewGame()">Нова гра в цій кімнаті з цими гравцями</button>
-                <button onclick="closeGameDialog()">Закрити</button>
-            </div>
-            <div id="player-controls" style="display: none;">
-                <button onclick="closeGameDialog()">Закрити</button>
-            </div>
-        </div>
-
-        <div id="new-game-invite-dialog" style="display: none;">
-            <h2 id="invite-message"></h2>
-            <button onclick="acceptNewGame()">Прийняти запрошення</button>
-            <button onclick="declineNewGame()">Відмовитися</button>
-        </div>
 
         <div class="message-box">
             <h4>Журнал гри:</h4>
@@ -198,11 +181,7 @@
             askedCardRank: document.getElementById('asked-card-rank'),
             gameEndDialog: document.getElementById('game-end-dialog'),
             winnerName: document.getElementById('winner-name'),
-            currentPlayerName: document.getElementById('current-player-name'), // Додано
-            adminControls: document.getElementById('admin-controls'), // Додано
-            playerControls: document.getElementById('player-controls'), // Додано
-            newGameInviteDialog: document.getElementById('new-game-invite-dialog'),
-            inviteMessage: document.getElementById('invite-message')
+            currentPlayerName: document.getElementById('current-player-name') // Додано
         };
 
         if (tg) {
@@ -217,12 +196,6 @@
             }
         } else {
             telegramUser = "Тестовий гравець";
-        }
-
-        function closeGameDialog() {
-            if (elements.gameEndDialog) {
-                elements.gameEndDialog.style.display = 'none';
-            }
         }
         
         function logMessage(message) {
@@ -340,17 +313,15 @@
                         updateUI(data.state, data.state.my_hand);
                         break;
                     case 'game_over':
-                        //elements.game.style.display = 'none'; - може, оце взагалі тут не треба?
-                        elements.gameEndDialog.style.display = 'block';
-                        elements.winnerName.textContent = `Гра закінчена! Переможець: ${data.winner}.`;
-
-                        // Показуємо відповідні кнопки
+                        // Використовуємо alert для відображення переможця
+                        window.alert(data.message);
+                        
+                        // Адмін може запропонувати нову гру
                         if (data.isAdmin) {
-                            elements.adminControls.style.display = 'block';
-                            elements.playerControls.style.display = 'none';
-                        } else {
-                            elements.adminControls.style.display = 'none';
-                            elements.playerControls.style.display = 'block';
+                            const newGame = window.confirm("Бажаєте почати нову гру?");
+                            if (newGame) {
+                                startNewGame();
+                            }
                         }
                         break;
                     case 'ask_response_needed':
@@ -375,17 +346,11 @@
                         break;
                     case 'invite_new_game':
                         hideAllControls();
-                        elements.gameEndDialog.style.display = 'none';
-
-                        // Перевіряємо, чи є поточний гравець адміністратором
-                        if (data.isAdmin) {
-                            // Адмін переходить до стану "очікування"
-                            elements.game.style.display = 'block';
-                            elements.startGameBtn.style.display = 'block';
+                        const acceptInvite = window.confirm(`${data.adminName} запрошує до нової гри. Прийняти?`);
+                        if (acceptInvite) {
+                            acceptNewGame();
                         } else {
-                            // Інші гравці бачать діалог із запрошенням
-                            elements.newGameInviteDialog.style.display = 'block';
-                            elements.inviteMessage.textContent = `${data.adminName} запрошує до нової гри.`;
+                            declineNewGame();
                         }
                         break;
                     case 'game_start_confirmed':
@@ -417,20 +382,16 @@
                 // Відправляємо запит на сервер
                 const message_to_send = { type: 'invite_new_game', room: myRoomId };
                 socket.send(JSON.stringify(message_to_send));
-                // Приховуємо діалог завершення гри
-                elements.gameEndDialog.style.display = 'none';
             }
         }
 
         function acceptNewGame() {
             // Відправляємо серверу, що гравець прийняв запрошення
             socket.send(JSON.stringify({ type: 'accept_new_game', room: myRoomId }));
-            elements.newGameInviteDialog.style.display = 'none';
         }
 
         function declineNewGame() {
-            // Просто приховуємо діалог
-            elements.newGameInviteDialog.style.display = 'none';
+            window.alert("Ви відмовилися від нової гри. Ви можете закрити вікно.");
         }
 
         function askForCard() {
