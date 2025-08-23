@@ -220,7 +220,7 @@ class Game:
                 player.hand.append(new_card_after_set)
         
             # Передача ходу лише після всіх перевірок
-            await self.next_turn()
+        await self.next_turn()
 
     async def handle_guess_count(self, guessing_player_name, count):
         asking_player = self.players.get(guessing_player_name)
