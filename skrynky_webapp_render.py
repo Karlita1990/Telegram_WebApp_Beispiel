@@ -135,34 +135,50 @@ class Game:
         await self.notify_all_state()
 
     async def check_end_game(self):
-        total_collected = sum(len(p.collected_sets) for p in self.players.values())
-        # Якщо загальна кількість зібраних скриньок досягла 9
-        if total_collected == 9:
-            # Знаходимо гравця з найбільшою кількістю скриньок
-            winner = max(self.players.values(), key=lambda p: len(p.collected_sets))
+    total_collected = sum(len(p.collected_sets) for p in self.players.values())
+    
+    # Якщо загальна кількість зібраних скриньок досягла 9
+    if total_collected == 9:
+        # 1. Знаходимо максимальну кількість зібраних скриньок
+        max_sets = 0
+        if self.players:
+            max_sets = max(len(p.collected_sets) for p in self.players.values())
         
-            # Відправляємо повідомлення про завершення гри всім гравцям
-            for p in self.players.values():
-                await p.websocket.send(json.dumps({'type': 'game_over', 'winner': winner.name}))
+        # 2. Збираємо імена всіх переможців
+        winners = [p.name for p in self.players.values() if len(p.collected_sets) == max_sets]
+        
+        # 3. Формуємо повідомлення про перемогу або нічию
+        winner_message = ""
+        if len(winners) == 1:
+            winner_message = f"Гра закінчена! Переможець: {winners[0]}."
+        else:
+            winner_message = f"Гра закінчена! Нічия! Переможці: {', '.join(winners)}."
 
-            # Після завершення гри скидаємо стан для можливості початку нової
-            self.game_started = False
-            self.deck = Deck()
-            self.current_turn_index = 0
-            self.asking_player = None
-            self.target_player = None
-            self.asked_rank = None
-        
-            # Очищаємо карти гравців, але не видаляємо їх з кімнати
-            for player in self.players.values():
-                player.hand = []
-                player.collected_sets = []
+        # Відправляємо повідомлення про завершення гри всім гравцям
+        for p in self.players.values():
+            is_admin = p.name == self.room_admin
+            await p.websocket.send(json.dumps({
+                'type': 'game_over', 
+                'message': winner_message, 
+                'winner': ', '.join(winners),
+                'isAdmin': is_admin
+            }))
 
-            # Повідомляємо клієнтам про оновлений стан (лобі)
-            await self.notify_all_state()
+        self.game_started = False
+        self.deck = Deck()
+        self.current_turn_index = 0
+        self.asking_player = None
+        self.target_player = None
+        self.asked_rank = None
         
-            return True
-        return False            
+        for player in self.players.values():
+            player.hand = []
+            player.collected_sets = []
+
+        await self.notify_all_state()
+        
+        return True
+    return False
     
     async def handle_ask_card(self, asking_player_name, target_player_name, card_rank):
         self.asking_player = asking_player_name
