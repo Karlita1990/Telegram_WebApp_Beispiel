@@ -66,6 +66,12 @@ class Game:
         if len(self.players) >= 2 and not self.game_started:
             self.game_started = True
             self.deck = Deck()
+
+            # Очищаємо руки та зібрані скриньки всіх гравців
+            for player in self.players.values():
+                player.hand = []
+                player.collected_sets = []
+            
             await self.deal_initial_cards()
             player_names = list(self.players.keys())
             self.current_turn_index = 0
@@ -163,20 +169,7 @@ class Game:
                     'winner': ', '.join(winners),
                     'isAdmin': is_admin
                 }))
-
-            self.game_started = False
-            self.deck = Deck()
-            self.current_turn_index = 0
-            self.asking_player = None
-            self.target_player = None
-            self.asked_rank = None
-        
-            for player in self.players.values():
-                player.hand = []
-                player.collected_sets = []
-
-            await self.notify_all_state()
-        
+                
             return True
         return False
     
