@@ -298,6 +298,8 @@
                         break;
                     case 'game_over':
                         logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
+						// Використовуємо alert для відображення переможця
+                        window.alert(data.message);
                         break;
                     case 'ask_response_needed':
                         hideAllControls();
