@@ -158,7 +158,14 @@ class Game:
             elif len(winners) == 1:
                 winner_message = f"Гра закінчена! Переможець: {winners[0]}."
             else:
-                winner_message = f"Гра закінчена! Нічия! Найбільше скриньок набрали: {', '.join(winners)}."
+                winner_message = f"Гра закінчена! Серед переможців - нічия! Найбільше скриньок набрали: {', '.join(winners)}."
+
+            # Формуємо список результатів для всіх гравців
+            player_results = sorted(
+                [{'name': p.name, 'score': len(p.collected_sets)} for p in self.players.values()],
+                key=lambda x: x['score'],
+                reverse=True
+            )
 
             for p in self.players.values():
                 is_admin = p.name == self.room_admin
@@ -166,7 +173,8 @@ class Game:
                     'type': 'game_over',
                     'message': winner_message,
                     'winner': ', '.join(winners),
-                    'isAdmin': is_admin
+                    'isAdmin': is_admin,
+                    'results': player_results # Додаємо результати всіх гравців
                 }))
         
             self.game_started = False
