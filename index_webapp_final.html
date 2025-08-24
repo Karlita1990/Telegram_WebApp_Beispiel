@@ -139,7 +139,9 @@
         let myName = '';
         let myRoomId = '';
         let myCards = [];
-
+        // Лічильник для контролю, щоб game_over оброблявся лише один раз
+        let gameOverHandled = false;
+		
         const elements = {
             lobby: document.getElementById('lobby'),
             game: document.getElementById('game'),
@@ -269,6 +271,28 @@
             elements.log.scrollTop = elements.log.scrollHeight; // <--- ВИПРАВЛЕНО ТУТ
         }
 
+		// Функція для обробки завершення гри
+        function handleGameOver(data) {
+            if (gameOverHandled) return; // якщо вже виконувалось – вийти
+            gameOverHandled = true;
+
+            logMessage(`🏆 Гра завершена! Переможець: ${data.winner}.`);
+    
+            // Відображення повідомлення
+            window.alert("🏆 " + data.message);
+
+            // Формування результатів
+            const resultsHtml = data.results.map(p => {
+                return `${p.name}: ${p.score} скриньок`;
+            }).join('\n');
+
+            // Оновлення модального вікна (тут поки через alert)
+            const modalContent = `🏆 ${data.message}\n\nРезультати гри:\n${resultsHtml}`;
+            window.alert(modalContent);
+
+            window.alert("Для нової гри перезавантажте бот та зареєструйтеся заново");
+        }
+		
         function connectWebSocket() {
             socket = new WebSocket(WS_URL);
             
@@ -297,19 +321,7 @@
                         logMessage('Гра розпочалась!');
                         break;
                     case 'game_over':
-                        logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
-						// Використовуємо alert для відображення переможця
-                        window.alert(data.message);
-
-						const resultsHtml = data.results.map(p => {
-                            return `${p.name}: ${p.score} скриньок`;
-                        }).join('\n');
-                         // Оновлення вашого модального вікна
-                        const modalContent = `{data.message}\n\nРезультати гри:\n${resultsHtml}`;
-                          // Показуєте модальне вікно з цим вмістом
-                          // наприклад, через window.alert або власний модальний елемент
-                        window.alert(modalContent);
-						 window.alert("Для нової гри перезавантажте бот та зареєструйтеся заново");
+                        handleGameOver(data); // викликаємо окрему функцію
                         break;
                     case 'ask_response_needed':
                         hideAllControls();
