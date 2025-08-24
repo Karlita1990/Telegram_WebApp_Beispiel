@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <title>Гра "Скриньки"</title>
     <style>
-        /* Загальні покращення макету */
+/* Загальні покращення макету */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f0f0;
     margin: 0;
     padding: 20px;
-    display: flex; /* Використовуємо flexbox для body, щоб центрувати ігровий контейнер */
+    display: flex; /* Використовуємо flexbox для body, щоб центрувати контейнер гри */
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Змінено на flex-start, щоб вміст не розтягувався по вертикалі */
     min-height: 100vh;
 }
 
@@ -23,78 +23,71 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    text-align: center; /* Центруємо весь текст у головному контейнері */
-}
-
-/* Послідовна відстань та вирівнювання */
-.game-info-section {
-    display: flex;
+    display: flex; /* Використовуємо flexbox для внутрішнього вирівнювання */
     flex-direction: column;
-    align-items: center;
-    gap: 15px; /* Послідовна вертикальна відстань між секціями */
-    text-align: center;
+    align-items: center; /* Центруємо всі дочірні елементи */
 }
 
-/* Відображення карт */
+/* Стилі для заголовків та абзаців */
+h1 { margin-bottom: 10px; }
+p { margin: 5px 0; }
+ul { list-style-type: none; padding: 0; }
+ul li { margin: 3px 0; font-size: 0.9em; }
+
+/* Стилі для контейнерів, які повинні бути вирівняні по лівому краю */
+#log,
+.collected-boxes,
+#game-info {
+    text-align: left; /* Встановлюємо вирівнювання по лівому краю для цих блоків */
+    width: 100%; /* Забезпечуємо повну ширину */
+    max-width: 800px;
+}
+
+/* Інші стилі, що залишилися без змін */
 .card-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 8px; /* Послідовна відстань між картами */
+    gap: 8px;
     margin-top: 15px;
 }
-
-/* Стилі для журналу та повідомлень */
-#log {
-    max-height: 150px;
-    overflow-y: scroll;
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-top: 10px;
-    text-align: left; /* Залишаємо текст журналу вирівняним по лівому краю для зручності читання */
-    background-color: #f9f9f9;
-    border-radius: 5px;
-    font-size: 0.9em;
-    line-height: 1.4;
+.card {
+    width: 55px; height: 80px;
+    border: 1px solid #ccc; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1em; font-weight: bold;
+    background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
 }
-
-/* Стилі для кнопок та полів введення */
+.card:hover { transform: translateY(-3px); }
+.hearts, .diamonds { color: red; }
+.clubs, .spades { color: black; }
+.game-state-message { font-size: 1.2em; margin-bottom: 15px; font-weight: bold; }
+#controls { margin-top: 15px; }
 button, select, input {
-    padding: 8px 15px;
-    margin: 4px;
-    font-size: 0.9em;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    padding: 8px 15px; margin: 4px;
+    font-size: 0.9em; border: 1px solid #ccc; border-radius: 4px;
+    cursor: pointer; transition: background-color 0.2s;
 }
-
-/* Секції керування */
-#controls {
+button:hover { background-color: #e9e9e9; }
+button:active { background-color: #dcdcdc; }
+button:disabled { background-color: #cccccc; cursor: not-allowed; }
+#player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
+.hidden { display: none !important; }
+.lobby-inputs input { width: 180px; }
+.lobby-inputs button { width: 370px; }
+#suits-checkboxes {
+    margin-bottom: 2em;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    justify-content: space-around;
+    max-width: 400px;
+    margin: 0 auto 2em auto;
 }
-
-#game-actions, #guess-count, #guess-suits-form, #response-buttons {
+#response-buttons {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: space-around;
     gap: 1em;
-}
-
-/* Невеликі налаштування інтерфейсу */
-h1, p, ul {
-    margin: 0;
-    padding: 0;
-}
-ul li {
-    list-style-type: none;
-    margin-bottom: 5px;
-}
-.hidden {
-    display: none !important;
+    margin-top: 1em;
 }
     </style>
 </head>
