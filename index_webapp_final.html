@@ -4,103 +4,154 @@
     <meta charset="UTF-8">
     <title>Гра "Скриньки"</title>
     <style>
-/* Загальні покращення макету */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f0f0f0;
-    margin: 0;
-    padding: 20px;
-    display: flex; /* Використовуємо flexbox для body, щоб центрувати контейнер гри */
-    justify-content: center;
-    align-items: flex-start; /* Змінено на flex-start, щоб вміст не розтягувався по вертикалі */
-    min-height: 100vh;
-}
+body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        background-color: #f0f0f0; 
+        margin: 0; 
+        padding: 20px; 
+        text-align: center; 
+    }
 
-.game-container {
-    max-width: 800px;
-    width: 100%;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    display: flex; /* Використовуємо flexbox для внутрішнього вирівнювання */
-    flex-direction: column;
-    align-items: center; /* Центруємо всі дочірні елементи */
-}
+    .game-container { 
+        max-width: 800px; 
+        margin: auto; 
+        background: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+    }
 
-/* Стилі для заголовків та абзаців */
-h1 { margin-bottom: 10px; }
-p { margin: 5px 0; }
-ul { list-style-type: none; padding: 0; }
-ul li { margin: 3px 0; font-size: 0.9em; }
+    /* 🔹 Центрування лобі */
+    #lobby {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        text-align: center;
+    }
 
-/* Стилі для контейнерів, які повинні бути вирівняні по лівому краю */
-.collected-boxes,
-#game-info {
-    text-align: left; /* Встановлюємо вирівнювання по лівому краю для цих блоків */
-    width: 100%; /* Забезпечуємо повну ширину */
-    max-width: 800px;
-}
+    /* 🔹 Центрування та охайний вигляд блоку гри */
+    #game {
+        display: flex;
+        flex-direction: column;
+        align-items: center;   /* центрує всі елементи горизонтально */
+        text-align: center;    /* вирівнює текст */
+        gap: 1em;              /* проміжок між секціями */
+        margin: 0 auto;        /* центрування по ширині */
+        max-width: 800px;      /* обмеження ширини для великих екранів */
+        width: 100%;           /* адаптивність */
+        padding: 1em;          /* невеликий внутрішній відступ */
+    }
 
-/* Інші стилі, що залишилися без змін */
-.card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 15px;
-}
-.card {
-    width: 55px; height: 80px;
-    border: 1px solid #ccc; border-radius: 5px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1em; font-weight: bold;
-    background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease-in-out;
-}
-.card:hover { transform: translateY(-3px); }
-.hearts, .diamonds { color: red; }
-.clubs, .spades { color: black; }
-.game-state-message { font-size: 1.2em; margin-bottom: 15px; font-weight: bold; }
-#controls { margin-top: 15px; }
-button, select, input {
-    padding: 8px 15px; margin: 4px;
-    font-size: 0.9em; border: 1px solid #ccc; border-radius: 4px;
-    cursor: pointer; transition: background-color 0.2s;
-}
-button:hover { background-color: #e9e9e9; }
-button:active { background-color: #dcdcdc; }
-button:disabled { background-color: #cccccc; cursor: not-allowed; }
-#player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
-.hidden { display: none !important; }
-.lobby-inputs input { width: 180px; }
-.lobby-inputs button { width: 370px; }
-#suits-checkboxes {
-    margin-bottom: 2em;
-    display: flex;
-    justify-content: space-around;
-    max-width: 400px;
-    margin: 0 auto 2em auto;
-}
-#response-buttons {
-    display: flex;
-    justify-content: space-around;
-    gap: 1em;
-    margin-top: 1em;
-}
-#log {
-    max-height: 150px; /* Обмежує максимальну висоту контейнера */
-    overflow-y: scroll; /* Дозволяє вертикальну прокрутку, якщо вмісту забагато */
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-top: 10px;
-    text-align: left;
-    background-color: #f9f9f9;
-    border-radius: 5px;
-    font-size: 0.9em;
-    line-height: 1.4;
-    white-space: pre-wrap; /* Забезпечує перенесення рядків */
-}
+    /* 🔹 Панель керування */
+    #controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8em;
+        width: 100%;
+    }
+
+    /* 🔹 Підблоки з діями */
+    #game-actions,
+    #guess-count,
+    #guess-suits-form,
+    #response-buttons {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    /* 🔹 Рука гравця */
+    #player-hand {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5em;
+    }
+
+    /* 🔹 Зібрані скриньки */
+    #collected-boxes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em;
+    }
+
+    /* 🔹 Список гравців */
+    #players-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+    #players-list li {
+        margin: 0.3em 0;
+    }
+
+    /* 🔹 Журнал */
+    #log {
+        text-align: left;
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 5px;
+    }
+
+    /* 🔹 Карти */
+    .card-container { 
+        display: flex; 
+        flex-wrap: wrap; 
+        justify-content: center; 
+        gap: 8px; 
+        margin-top: 15px; 
+    }
+    .card { 
+        width: 55px; 
+        height: 80px; 
+        border: 1px solid #ccc; 
+        border-radius: 5px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 1.1em; 
+        font-weight: bold; 
+        background-color: white; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        transition: transform 0.2s ease-in-out; 
+    }
+    .card:hover { transform: translateY(-3px); }
+    .hearts, .diamonds { color: red; }
+    .clubs, .spades { color: black; }
+
+    /* 🔹 Інші дрібні стилі */
+    .game-state-message { font-size: 1.2em; margin-bottom: 15px; font-weight: bold; }
+    button, select, input { padding: 8px 15px; margin: 4px; font-size: 0.9em; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
+    button:hover { background-color: #e9e9e9; }
+    button:active { background-color: #dcdcdc; }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    .collected-boxes { margin-top: 15px; text-align: left; font-size: 0.9em; }
+    .hidden { display: none !important; }
+    .lobby-inputs input { width: 180px; }
+    .lobby-inputs button { width: 370px; }
+    h1 { margin-bottom: 10px; }
+    p { margin: 5px 0; }
+    ul { list-style-type: none; padding: 0; }
+    ul li { margin: 3px 0; font-size: 0.9em; }
+    #game-info { text-align: left; margin-top: 20px; }
+    #suits-checkboxes { 
+        margin-bottom: 2em;
+        display: flex;
+        justify-content: space-around;
+        max-width: 400px;
+        margin: 0 auto 2em auto;
+    }
+    #response-buttons {
+        display: flex;
+        justify-content: space-around;
+        gap: 1em;
+        margin-top: 1em;
+    }
     </style>
 </head>
 <body>
