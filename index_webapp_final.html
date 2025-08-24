@@ -4,48 +4,98 @@
     <meta charset="UTF-8">
     <title>Гра "Скриньки"</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 20px; text-align: center; }
-        .game-container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px; }
-        .card { width: 55px; height: 80px; border: 1px solid #ccc; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.1em; font-weight: bold; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s ease-in-out; }
-        .card:hover { transform: translateY(-3px); }
-        .hearts, .diamonds { color: red; }
-        .clubs, .spades { color: black; }
-        .game-state-message { font-size: 1.2em; margin-bottom: 15px; font-weight: bold; }
-        #log { max-height: 150px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-top: 10px; text-align: left; background-color: #f9f9f9; border-radius: 5px; font-size: 0.9em; line-height: 1.4; }
-        #controls { margin-top: 15px; }
-        button, select, input { padding: 8px 15px; margin: 4px; font-size: 0.9em; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: #e9e9e9; }
-        button:active { background-color: #dcdcdc; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #player-hand { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
-        .collected-boxes { margin-top: 15px; text-align: left; font-size: 0.9em; }
-        .hidden { display: none !important; }
-        .lobby-inputs input { width: 180px; }
-        .lobby-inputs button { width: 370px; }
-		
-		/* Нові стилі для охайного вигляду */
-        h1 { margin-bottom: 10px; }
-        p { margin: 5px 0; }
-        ul { list-style-type: none; padding: 0; }
-        ul li { margin: 3px 0; font-size: 0.9em; }
-        #game-info { text-align: left; margin-top: 20px; }
-		
-        /* 🔽 Відступ між мастями та кнопкою */
-        #suits-checkboxes { 
-            margin-bottom: 2em; /* зміни на 1.5em якщо хочеш менший відступ */
-            display: flex;
-            justify-content: space-around; /* або space-between для чіткого розкиду */
-            max-width: 400px; /* обмеж ширину, щоб не було занадто розтягнуто */
-            margin: 0 auto 2em auto; /* центр по горизонталі + відступ знизу */
-                          }
-        /* 🔽 Розподіл кнопок "Так" / "Ні" по ширині */
-        #response-buttons {
-            display: flex;
-            justify-content: space-around; /* або space-between для розтягування по краях */
-            gap: 1em; /* проміжок між кнопками */
-            margin-top: 1em; /* відступ зверху від тексту */
-        }
+        /* Загальні покращення макету */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+    display: flex; /* Використовуємо flexbox для body, щоб центрувати ігровий контейнер */
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.game-container {
+    max-width: 800px;
+    width: 100%;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center; /* Центруємо весь текст у головному контейнері */
+}
+
+/* Послідовна відстань та вирівнювання */
+.game-info-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Послідовна вертикальна відстань між секціями */
+    text-align: center;
+}
+
+/* Відображення карт */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px; /* Послідовна відстань між картами */
+    margin-top: 15px;
+}
+
+/* Стилі для журналу та повідомлень */
+#log {
+    max-height: 150px;
+    overflow-y: scroll;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: left; /* Залишаємо текст журналу вирівняним по лівому краю для зручності читання */
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+/* Стилі для кнопок та полів введення */
+button, select, input {
+    padding: 8px 15px;
+    margin: 4px;
+    font-size: 0.9em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+/* Секції керування */
+#controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#game-actions, #guess-count, #guess-suits-form, #response-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+}
+
+/* Невеликі налаштування інтерфейсу */
+h1, p, ul {
+    margin: 0;
+    padding: 0;
+}
+ul li {
+    list-style-type: none;
+    margin-bottom: 5px;
+}
+.hidden {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -113,14 +163,22 @@
             </div>
 
             <div id="game-info">
+				<div class="game-info-section">
                 <button id="startGameBtn" onclick="startGame()" >Розпочати гру</button>
+				</div>
+                <div class="game-info-section">
                 <p><strong>Ваші карти:</strong></p>
                 <div id="player-hand" class="card-container"></div>
+				</div>
+                <div class="game-info-section">
                 <p><strong>Зібрані скриньки:</strong></p>
                 <div id="collected-boxes" class="collected-boxes"></div>
+				</div>
+                <div class="game-info-section">
                 <p><strong>Колода:</strong> <span id="deck-size"></span> карт</p>
                 <p><strong>Гравці:</strong></p>
                 <ul id="players-list"></ul>
+				</div>
             </div>
         </div>
         
