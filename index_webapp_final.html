@@ -300,6 +300,20 @@
                         logMessage(`Гра закінчена! Переможець: ${data.winner}.`);
 						// Використовуємо alert для відображення переможця
                         window.alert(data.message);
+
+						const resultsHtml = data.results.map(p => {
+                            return `<p>${p.name}: ${p.score} скриньок</p>`;
+                        }).join('');
+                         // Оновлення вашого модального вікна
+                        const modalContent = `
+                            <p>${data.message}</p>
+                            <h4>Результати гри:</h4>
+                            ${resultsHtml}
+                        `;
+                          // Показуєте модальне вікно з цим вмістом
+                          // наприклад, через window.alert або власний модальний елемент
+                        window.alert(modalContent);
+						 window.alert("Для нової гри перезавантажте бот та зареєструйтеся заново");
                         break;
                     case 'ask_response_needed':
                         hideAllControls();
