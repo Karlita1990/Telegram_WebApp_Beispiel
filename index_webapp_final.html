@@ -302,14 +302,10 @@
                         window.alert(data.message);
 
 						const resultsHtml = data.results.map(p => {
-                            return `<p>${p.name}: ${p.score} скриньок</p>`;
-                        }).join('');
+                            return `${p.name}: ${p.score} скриньок`;
+                        }).join('\n');
                          // Оновлення вашого модального вікна
-                        const modalContent = `
-                            <p>${data.message}</p>
-                            <h4>Результати гри:</h4>
-                            ${resultsHtml}
-                        `;
+                        const modalContent = `{data.message}\n\nРезультати гри:\n${resultsHtml}`;
                           // Показуєте модальне вікно з цим вмістом
                           // наприклад, через window.alert або власний модальний елемент
                         window.alert(modalContent);
