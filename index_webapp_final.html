@@ -406,7 +406,7 @@ body {
                 logMessage("Підключено до сервера. Надсилаємо ім'я гравця та ID кімнати...");
                 // Новий, виправлений код:
                    const message_to_send = { type: 'join', name: myName, room: myRoomId };
-                   addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+                                                    //addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
                    socket.send(JSON.stringify(message_to_send));
                    };
             
@@ -466,7 +466,7 @@ body {
             if (socket.readyState === WebSocket.OPEN) {
                   const message_to_send = { type: 'start_game', room: myRoomId };
                 // Логуємо повідомлення перед відправкою
-                addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+                                                    //addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
                  // Відправляємо повідомлення
                 socket.send(JSON.stringify(message_to_send));
             }
@@ -478,7 +478,7 @@ body {
             if (targetPlayer && cardRank) {
                   const message_to_send = {type: 'ask_card', room: myRoomId, target: targetPlayer, card_rank: cardRank };
                 // Логуємо повідомлення перед відправкою
-                  addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+                                                    //addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
                // Відправляємо повідомлення
                   socket.send(JSON.stringify(message_to_send)); 
             } else {
@@ -496,7 +496,7 @@ body {
             if (suits.length > 0) {
                 const message_to_send = { type: 'guess_suits', room: myRoomId, suits: suits };
                 // Логуємо повідомлення перед відправкою
-                addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
+                                                    //addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');
                // Відправляємо повідомлення
                 socket.send(JSON.stringify(message_to_send));
                 elements.guessSuitsForm.style.display = 'none';
@@ -512,7 +512,7 @@ body {
       if (!isNaN(count)) {
           const message_to_send = { type: 'guess_count', room: myRoomId, count: count };
           // Логуємо повідомлення перед відправкою
-          addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');    
+                                                     //addLogEntry(`Надсилаю: ${JSON.stringify(message_to_send)}`, 'system');    
           // Відправляємо повідомлення
           socket.send(JSON.stringify(message_to_send));
           elements.guessCount.style.display = 'none'; // ховаємо форму після відправки
