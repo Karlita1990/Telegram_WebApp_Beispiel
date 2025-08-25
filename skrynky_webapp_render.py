@@ -309,7 +309,7 @@ class Game:
             await self.notify_all(f"Гравець {asking_player_name} продовжує свій хід.")
 
         else: # тут теж додано стосовно set(target_suits)
-            await self.notify_all(f"Гравець {asking_player.name} не вгадав масті set(target_suits) і бере карту з колоди.")
+            await self.notify_all(f"Гравець {asking_player.name} не вгадав масті {set(target_suits)} і бере карту з колоди.")
             await self.draw_card_and_check_sets(asking_player)  #, self.asked_rank)
             
         await self.check_end_game()
