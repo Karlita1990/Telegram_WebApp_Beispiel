@@ -301,48 +301,65 @@ body {
 
 
         function updateUI(state, myHand) {
-            elements.playersList.innerHTML = '';
-            state.players.forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}`;
-                elements.playersList.appendChild(li);
-            });
-            // Додайте цей рядок для оновлення імені поточного гравця
-            elements.currentPlayerName.textContent = state.current_turn;
-    
-            // Використовуємо myHand, переданий як аргумент
-            elements.playerHand.innerHTML = '';
-            if (myHand && myHand.length > 0) {
-                myHand.forEach(card => {
-                    const div = document.createElement('div');
-                    div.className = `card ${card.includes('♥') || card.includes('♦') ? 'hearts' : 'clubs'}`;
-                    div.textContent = card;
-                    elements.playerHand.appendChild(div);
-                });
-            } 
+            // Оновлення списку гравців з їхніми скриньками
+            elements.playersList.innerHTML = '';
+            state.players.forEach(p => {
+                const li = document.createElement('li');
 
-    
-            elements.collectedBoxes.innerHTML = '';
-            state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
-                const p = document.createElement('p');
-                p.textContent = `Зібрано скриньку: ${rank}`;
-                elements.collectedBoxes.appendChild(p);
-            });
-            elements.deckSize.textContent = state.deck_size;
-            elements.gameStatus.textContent = state.game_started ? `Гра розпочалась! Хід гравця: ${state.current_turn}` : `Очікування на гравців... (Всього ${state.players.length}/6)`;
-    
-            handleStartGameButton(state);
-    
-            hideAllControls();
+                // Формуємо текст з інформацією про зібрані скриньки
+                const collectedSetsText = p.collected_sets.length > 0
+                    ? ` (Скриньки: ${p.collected_sets.join(', ')})`
+                    : '';
+
+                li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}${collectedSetsText}`;
+                elements.playersList.appendChild(li);
+            });
+
+            // Оновлення імені поточного гравця
+            elements.currentPlayerName.textContent = state.current_turn;
+
+            // Використовуємо myHand, переданий як аргумент
+            elements.playerHand.innerHTML = '';
+            if (myHand && myHand.length > 0) {
+                myHand.forEach(card => {
+                    const div = document.createElement('div');
+                    // Перевіряємо масті для кольору
+                    const isRedSuit = card.includes('♥') || card.includes('♦');
+                    div.className = `card ${isRedSuit ? 'hearts' : 'clubs'}`;
+                    div.textContent = card;
+                    elements.playerHand.appendChild(div);
+                });
+            }
+
+    // Видаляємо цей блок коду, оскільки він застарів
+    // Ми тепер відображаємо скриньки в playersList
+    // elements.collectedBoxes.innerHTML = '';
+    // state.players.find(p => p.name === myName)?.collected_sets.forEach(rank => {
+    //     const p = document.createElement('p');
+    //     p.textContent = `Зібрано скриньку: ${rank}`;
+    //     elements.collectedBoxes.appendChild(p);
+    // });
+    
+            // Оновлення розміру колоди
+            elements.deckSize.textContent = state.deck_size;
+    
+            // Оновлення статусу гри
+            elements.gameStatus.textContent = state.game_started 
+               ? `Гра розпочалась! Хід гравця: ${state.current_turn}` 
+               : `Очікування на гравців... (Всього ${state.players.length}/6)`;
+
+            handleStartGameButton(state);
+            hideAllControls();
+
             const myPlayerState = state.players.find(p => p.name === myName);
-            if (state.game_started && state.current_turn === myName) {
-                elements.gameActions.style.display = 'block';
-                elements.targetPlayerSelect.innerHTML = state.players
-                    .filter(p => p.name !== myName)
-                    .map(p => `<option value="${p.name}">${p.name}</option>`)
-                    .join('');
-            }
-        }
+            if (state.game_started && state.current_turn === myName) {
+                elements.gameActions.style.display = 'block';
+                elements.targetPlayerSelect.innerHTML = state.players
+                    .filter(p => p.name !== myName)
+                    .map(p => `<option value="${p.name}">${p.name}</option>`)
+                    .join('');
+            }
+        }
 
         function handleStartGameButton(state) {
             const isRoomAdmin = state.room_admin === myName;
