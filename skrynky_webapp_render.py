@@ -201,9 +201,12 @@ class Game:
         
         target_cards_to_transfer = [card for card in target_player.hand if card[:-1] == self.asked_rank]
         
+        #додано для доповнення журналу
+        await self.notify_all(f"Гравець {self.asking_player} запитує у {target_player.name}, чи має той карти значення {self.asked_rank}?")
+        
         if response == 'yes':
             await self.notify_all(f"Гравець {target_player.name} відповідає 'Так'.")
-            await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт.")
+            await self.notify_all(f"Гравець {self.asking_player} має вгадати кількість карт  {self.asked_rank}.")
             await self.players.get(self.asking_player).websocket.send(json.dumps({
                 'type': 'guess_count_needed',
                 'target_player': target_player_name,
@@ -286,8 +289,8 @@ class Game:
             for card in target_cards_to_transfer:
                 target_player.hand.remove(card)
                 asking_player.hand.append(card)
-            
-            await self.notify_all(f"Гравець {asking_player.name} вгадав масті і отримує карти від гравця {target_player.name}.")
+            #тут додано стосовно set(target_suits)
+            await self.notify_all(f"Гравець {asking_player.name} вгадав масті {set(target_suits)} і отримує карти від гравця {target_player.name}.")
             
             self.check_for_sets(asking_player)
 
@@ -305,8 +308,8 @@ class Game:
             self.asked_rank = None
             await self.notify_all(f"Гравець {asking_player_name} продовжує свій хід.")
 
-        else:
-            await self.notify_all(f"Гравець {asking_player.name} не вгадав масті і бере карту з колоди.")
+        else: # тут теж додано стосовно set(target_suits)
+            await self.notify_all(f"Гравець {asking_player.name} не вгадав масті set(target_suits) і бере карту з колоди.")
             await self.draw_card_and_check_sets(asking_player)  #, self.asked_rank)
             
         await self.check_end_game()
