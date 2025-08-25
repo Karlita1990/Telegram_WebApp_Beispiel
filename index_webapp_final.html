@@ -290,11 +290,15 @@ body {
         }
 
         function logMessage(message) {
-            const p = document.createElement('p');
-            p.textContent = message;
-            elements.log.appendChild(p);
-            elements.log.scrollTop = elements.log.scrollHeight;
-        }
+            const now = new Date();
+            const dateStr = now.toLocaleDateString();   // локальна дата, напр. 25.08.2025
+            const timeStr = now.toLocaleTimeString();   // локальний час, напр. 14:35:12
+            const p = document.createElement('p');
+            p.textContent = `[${dateStr} ${timeStr}] ${message}`;
+            elements.log.appendChild(p);
+            elements.log.scrollTop = elements.log.scrollHeight;
+        }
+
 
         function updateUI(state, myHand) {
             elements.playersList.innerHTML = '';
