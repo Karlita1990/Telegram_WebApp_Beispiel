@@ -224,13 +224,14 @@ class Game:
         if not self.deck.is_empty():
             new_card = self.deck.draw()[0]
             player.hand.append(new_card)
+            new_card_rank = new_card[:-1] # Витягуємо ранг з нової карти (наприклад, 'Q' з 'Q♦')
 
             await self.notify_all(f"Гравець {player.name} бере карту з колоди.")
 
             # Перевірка на скриньки
             sets_collected = self.check_for_sets(player)
             if sets_collected:
-                await self.notify_all(f"Гравець {player.name} зібрав скриньку!")
+                await self.notify_all(f"Гравець {player.name} зібрав скриньку {new_card_rank}!")
 
             # Перевірка на порожню руку після збору скриньки
             if not player.hand and not self.deck.is_empty():
@@ -291,8 +292,18 @@ class Game:
                 asking_player.hand.append(card)
             #тут додано стосовно set(target_suits)
             await self.notify_all(f"Гравець {asking_player.name} вгадав масті {set(target_suits)} і отримує карти від гравця {target_player.name}.")
-            
+
+            # перевірка, чи зібрана скринька
             self.check_for_sets(asking_player)
+
+            # Перевірка на зібрану скриньку після передачі карт
+            # Якщо кількість карт у руці зменшилась після check_for_sets,
+            # значить, скринька була зібрана.
+            # Ми припускаємо, що це саме та скринька, ранг якої вгадував гравець.
+            # Це найбезпечніший спосіб, враховуючи поточну логіку.
+            if len(asking_player.hand) % 4 == 0:
+                await self.notify_all(f"Гравець {asking_player.name} зібрав скриньку {self.asked_rank}!")
+
 
             # Якщо у гравця, що вгадав, не залишилось карт, він бере нову з колоди
             await self.check_and_deal_if_needed(asking_player.name)
