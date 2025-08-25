@@ -412,7 +412,7 @@ body {
             
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                logMessage(`Отримано: ${event.data}`);
+                                                      //logMessage(`Отримано: ${event.data}`);
                 
                 switch (data.type) {
                     case 'joined_room':
