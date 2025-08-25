@@ -306,13 +306,19 @@ class Game:
             self.asking_player = asking_player_name
             self.target_player = None
             self.asked_rank = None
+            # Додаємо першу лінію перевірки, що гра закінчилася вже
+            if not self.game_started:
+                return
             await self.notify_all(f"Гравець {asking_player_name} продовжує свій хід.")
 
         else: # тут теж додано стосовно set(target_suits)
             await self.notify_all(f"Гравець {asking_player.name} не вгадав масті {set(target_suits)} і бере карту з колоди.")
             await self.draw_card_and_check_sets(asking_player)  #, self.asked_rank)
             
-        await self.check_end_game()
+        # Після того, як карти були передані, перевіряємо, чи не закінчилася гра
+        if await self.check_end_game():
+        # Якщо гра закінчилася, виходимо з функції
+            return
         await self.notify_all_state()
 
 
