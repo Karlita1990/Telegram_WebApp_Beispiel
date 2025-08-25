@@ -308,7 +308,7 @@ body {
 
                 // Формуємо текст з інформацією про зібрані скриньки
                 const collectedSetsText = p.collected_sets.length > 0
-                    ? ` (Скриньки: ${p.collected_sets.join(', ')})`
+                    ? ` (${p.collected_sets.join(', ')})`
                     : '';
 
                 li.textContent = `${p.name} (${p.is_turn ? 'Ходить' : 'Очікує'}) - Скриньок: ${p.collected_boxes}${collectedSetsText}`;
